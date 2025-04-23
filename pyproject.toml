@@ -44,7 +44,7 @@ omit = [
 
 [tool.coverage.paths]
 astro_image_display_api = ["src/astro_image_display_api", "*/astro-image-display-api/src/astro_image_display_api"]
-tests = ["tests", "*/astro-image-display-api/tests"]
+tests = ["tests"]
 
 [tool.coverage.report]
 exclude_lines = [
