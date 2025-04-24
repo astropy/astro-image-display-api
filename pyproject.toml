@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "astro-image-display-api"
+dynamic = ["version"]
+description = 'Astronomical image display API definition for cross-backend interoperability'
+readme = "README.md"
+requires-python = ">=3.12"
+license = "BSD-3-Clause"
+keywords = []
+authors = [
+  { name = "Matt Craig", email = "mattwcraig@gmail.com" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: Implementation :: CPython",
+]
+dependencies = []
+
+[project.urls]
+Documentation = "https://github.com/astropy/astro-image-display-api#readme"
+Issues = "https://github.com/astropy/astro-image-display-api/issues"
+Source = "https://github.com/astropy/astro-image-display-api"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/astro_image_display_api/_version.py"
+
+[tool.coverage.run]
+source_pkgs = ["astro_image_display_api", "tests"]
+branch = true
+parallel = true
+
+[tool.coverage.paths]
+astro_image_display_api = ["src/astro_image_display_api", "*/astro-image-display-api/src/astro_image_display_api"]
+tests = ["tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
