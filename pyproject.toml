@@ -7,7 +7,7 @@ name = "astro-image-display-api"
 dynamic = ["version"]
 description = 'Astronomical image display API definition for cross-backend interoperability'
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = "BSD-3-Clause"
 keywords = []
 authors = [
@@ -16,10 +16,9 @@ authors = [
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: Implementation :: CPython",
-  "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = []
 
@@ -38,9 +37,6 @@ version-file = "src/astro_image_display_api/_version.py"
 source_pkgs = ["astro_image_display_api", "tests"]
 branch = true
 parallel = true
-omit = [
-  "src/astro_image_display_api/__about__.py",
-]
 
 [tool.coverage.paths]
 astro_image_display_api = ["src/astro_image_display_api", "*/astro-image-display-api/src/astro_image_display_api"]
