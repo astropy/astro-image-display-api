@@ -12,6 +12,8 @@ from astropy.table import Table, vstack  # noqa: E402
 from astropy import units as u  # noqa: E402
 from astropy.wcs import WCS  # noqa: E402
 
+__all__ = ['ImageWidgetAPITest']
+
 
 class ImageWidgetAPITest:
     cursor_error_classes = (ValueError)
@@ -403,12 +405,14 @@ class ImageWidgetAPITest:
     def test_save(self, tmp_path):
         filename = tmp_path / 'woot.png'
         self.image.save(filename)
+        assert filename.is_file()
 
     def test_save_overwrite(self, tmp_path):
         filename = tmp_path / 'woot.png'
 
         # First write should be fine
         self.image.save(filename)
+        assert filename.is_file()
 
         # Second write should raise an error because file exists
         with pytest.raises(FileExistsError):
