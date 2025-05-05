@@ -1,8 +1,7 @@
 from astropy.utils.data import get_pkg_data_contents
 
 from astro_image_display_api.interface_definition import ImageViewerInterface
-from astro_image_display_api.dummy_viewer import ImageViewer
-from astro_image_display_api.widget_api_test import ImageWidgetAPITest
+
 
 def test_api_test_class_completeness():
     """
