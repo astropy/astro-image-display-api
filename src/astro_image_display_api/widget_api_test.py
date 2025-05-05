@@ -54,6 +54,11 @@ class ImageWidgetAPITest:
         assert len(table) == 0
         assert sorted(table.colnames) == sorted(['x', 'y', 'coord', 'marker name'])
 
+    def test_default_marker_names(self):
+        # Check only that default names are set to a non-empty string
+        assert self.image.DEFAULT_MARKER_NAME
+        assert self.image.DEFAULT_INTERACTIVE_MARKER_NAME
+
     def test_width_height(self):
         assert self.image.image_width == 250
         assert self.image.image_height == 100
@@ -316,6 +321,9 @@ class ImageWidgetAPITest:
                                    mark_coord_table['coord'].dec.deg)
 
     def test_stretch(self):
+        # Check that the stretch options is not an empty list
+        assert len(self.image.stretch_options) > 0
+
         original_stretch = self.image.stretch
 
         with pytest.raises(ValueError, match='must be one of'):
