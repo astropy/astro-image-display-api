@@ -174,12 +174,12 @@ class ImageWidgetAPITest:
         self.image.start_marking()
         assert not self.image.click_drag
 
-        # Simulate a mouse click to add default marker name to the list.
-        try:
-            self.image._mouse_click_cb(self.image.viewer, None, 50, 50)
-            assert self.image.get_marker_names() == [self.image._interactive_marker_set_name, 'markymark']
-        except AttributeError:
-            pass
+        # Add a marker to the interactive marking table
+        self.image.add_markers(
+            Table(data=[[50], [50]], names=['x', 'y'], dtype=('float', 'float')),
+            marker_name=self.image.DEFAULT_INTERACTIVE_MARKER_NAME,
+        )
+        assert self._get_marker_names_as_set() == set([self.image.DEFAULT_INTERACTIVE_MARKER_NAME])
 
         # Clear markers to not pollute other tests.
         self.image.stop_marking(clear_markers=True)
@@ -188,13 +188,14 @@ class ImageWidgetAPITest:
         self._check_empty_marker_table_return_properties(self.image.get_markers(marker_name="all"))
 
         # Hate this, should add to public API
-        marknames = self.image._marktags
+        marknames = self._get_marker_names_as_set()
         assert len(marknames) == 0
 
         # Make sure that click_drag is restored as expected
         assert self.image.click_drag
 
     def test_add_markers(self):
+        original_marker_name = self.image.DEFAULT_MARKER_NAME
         data = np.arange(10).reshape(5, 2)
         orig_tab = Table(data=data, names=['x', 'y'], dtype=('float', 'float'))
         tab = Table(data=data, names=['x', 'y'], dtype=('float', 'float'))
@@ -202,7 +203,7 @@ class ImageWidgetAPITest:
                                skycoord_colname='coord', marker_name='test1')
 
         # Make sure setting didn't change the default name
-        assert self.image._default_mark_tag_name == 'default-marker-name'
+        assert self.image.DEFAULT_MARKER_NAME == original_marker_name
 
         # Regression test for GitHub Issue 45:
         # Adding markers should not modify the input data table.
@@ -212,7 +213,7 @@ class ImageWidgetAPITest:
         self.image.add_markers(tab, x_colname='x', y_colname='y',
                                skycoord_colname='coord', marker_name='test2')
 
-        marknames = self.image._marktags
+        marknames = self._get_marker_names_as_set()
         assert marknames == set(['test1', 'test2'])
         # assert self.image.get_marker_names() == ['test1', 'test2']
 
@@ -234,7 +235,7 @@ class ImageWidgetAPITest:
         assert (t2['y'] == expected['y']).all()
 
         self.image.remove_markers(marker_name='test1')
-        marknames = self.image._marktags
+        marknames = self._get_marker_names_as_set()
         assert marknames == set(['test2'])
         # assert self.image.get_marker_names() == ['test2']
 
@@ -249,14 +250,12 @@ class ImageWidgetAPITest:
                                skycoord_colname='coord')
         # Don't care about the order of the marker names so use set instead of
         # list.
-        marknames = self.image._marktags
-        assert (set(marknames) == set(['test2', self.image._default_mark_tag_name]))
-        # assert (set(self.image.get_marker_names()) ==
-        #         set(['test2', self.image._default_mark_tag_name]))
+        marknames = self._get_marker_names_as_set()
+        assert (set(marknames) == set(['test2', self.image.DEFAULT_MARKER_NAME]))
 
         # Clear markers to not pollute other tests.
         self.image.reset_markers()
-        marknames = self.image._marktags
+        marknames = self._get_marker_names_as_set()
         assert len(marknames) == 0
         self._check_empty_marker_table_return_properties(self.image.get_markers(marker_name="all"))
         # Check that no markers remain after clearing
@@ -391,10 +390,10 @@ class ImageWidgetAPITest:
 
         # If is_marking is true then trying to enable click_drag should fail
         self.image.click_drag = False
-        self.image._is_marking = True
-        with pytest.raises(ValueError, match=r'([Ii]nteractive marking)|(while in marking mode)'):
+        self.image.start_marking()
+        with pytest.raises(ValueError, match=r'([Ii]nteractive marking)|(while in marking mode)|(while marking is active)'):
             self.image.click_drag = True
-        self.image._is_marking = False
+        self.image.stop_marking()
 
     def test_click_center(self):
         # Set this to ensure that click_center turns it off
@@ -408,12 +407,12 @@ class ImageWidgetAPITest:
         self.image.click_center = True
         assert not self.image.click_drag
 
-        # If is_marking is true then trying to enable click_center should fail
-        self.image._is_marking = True
         self.image.click_center = False
-        with pytest.raises(ValueError, match=r'([Ii]nteractive marking)|(while in marking mode)'):
+        # If is_marking is true then trying to enable click_center should fail
+        self.image.start_marking()
+        with pytest.raises(ValueError, match=r'([Ii]nteractive marking)|(while marking is active)'):
             self.image.click_center = True
-        self.image._is_marking = False
+        self.image.stop_marking()
 
     def test_scroll_pan(self):
         # Make sure scroll_pan is actually settable
