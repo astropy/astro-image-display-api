@@ -363,6 +363,7 @@ class ImageWidgetAPITest:
         self.image.cuts = (10, 100)
         assert self.image.cuts == (10, 100)
 
+    @pytest.mark.xfail(reason="Not clear whether colormap is part of the API")
     def test_colormap(self):
         cmap_desired = 'gray'
         cmap_list = self.image.colormap_options
