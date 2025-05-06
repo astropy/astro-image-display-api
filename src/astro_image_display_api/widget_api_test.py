@@ -142,6 +142,7 @@ class ImageWidgetAPITest:
 
         # Set the marker style
         marker_style = {'color': 'yellow', 'radius': 10, 'type': 'cross'}
+        self.image.marker = marker_style
         m_str = str(self.image.marker)
         for key in marker_style.keys():
             assert key in m_str
@@ -314,14 +315,13 @@ class ImageWidgetAPITest:
         # Add markers using world coordinates
         pixels = np.linspace(0, 100, num=10).reshape(5, 2)
         marks_pix = Table(data=pixels, names=['x', 'y'], dtype=('float', 'float'))
-        marks_world = wcs.pixel_to_world(marks_pix['x'], marks_pix['y'])
-        marks_coords = SkyCoord(marks_world, unit='degree')
+        marks_coords = wcs.pixel_to_world(marks_pix['x'], marks_pix['y'])
         mark_coord_table = Table(data=[marks_coords], names=['coord'])
         self.image.add_markers(mark_coord_table, use_skycoord=True)
         result = self.image.get_markers()
         # Check the x, y positions as long as we are testing things...
         # The first test had one entry that was zero, so any check
-        # based on rtol will will. Added a small atol to make sure
+        # based on rtol will not work. Added a small atol to make sure
         # the test passes.
         np.testing.assert_allclose(result['x'], marks_pix['x'], atol=1e-9)
         np.testing.assert_allclose(result['y'], marks_pix['y'])
@@ -336,7 +336,7 @@ class ImageWidgetAPITest:
 
         original_stretch = self.image.stretch
 
-        with pytest.raises(ValueError, match='must be one of'):
+        with pytest.raises(ValueError, match='[mM]ust be one of'):
             self.image.stretch = 'not a valid value'
 
         # A bad value should leave the stretch unchanged
@@ -347,7 +347,7 @@ class ImageWidgetAPITest:
         assert self.image.stretch is not original_stretch
 
     def test_cuts(self, data):
-        with pytest.raises(ValueError, match='must be one of'):
+        with pytest.raises(ValueError, match='[mM]ust be one of'):
             self.image.cuts = 'not a valid value'
 
         with pytest.raises(ValueError, match='must have length 2'):
