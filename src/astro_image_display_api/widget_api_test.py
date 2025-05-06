@@ -49,7 +49,7 @@ class ImageWidgetAPITest:
         """
         self.image = self.image_widget_class(image_width=250, image_height=100)
 
-    def _check_empty_marker_table_return_properties(self, table):
+    def _assert_empty_marker_table(self, table):
         assert isinstance(table, Table)
         assert len(table) == 0
         assert sorted(table.colnames) == sorted(['x', 'y', 'coord', 'marker name'])
@@ -127,7 +127,7 @@ class ImageWidgetAPITest:
 
     def test_marking_operations(self):
         marks = self.image.get_markers(marker_name="all")
-        self._check_empty_marker_table_return_properties(marks)
+        self._assert_empty_marker_table(marks)
         assert not self.image.is_marking
 
         # Ensure you cannot set it like this.
@@ -169,7 +169,7 @@ class ImageWidgetAPITest:
             warnings.simplefilter("error")
             t = self.image.get_markers(marker_name='markymark')
 
-        self._check_empty_marker_table_return_properties(t)
+        self._assert_empty_marker_table(t)
 
         self.image.click_drag = True
         self.image.start_marking()
@@ -186,7 +186,7 @@ class ImageWidgetAPITest:
         self.image.stop_marking(clear_markers=True)
 
         assert self.image.is_marking is False
-        self._check_empty_marker_table_return_properties(self.image.get_markers(marker_name="all"))
+        self._assert_empty_marker_table(self.image.get_markers(marker_name="all"))
 
         # Hate this, should add to public API
         marknames = self._get_marker_names_as_set()
@@ -258,15 +258,15 @@ class ImageWidgetAPITest:
         self.image.reset_markers()
         marknames = self._get_marker_names_as_set()
         assert len(marknames) == 0
-        self._check_empty_marker_table_return_properties(self.image.get_markers(marker_name="all"))
+        self._assert_empty_marker_table(self.image.get_markers(marker_name="all"))
         # Check that no markers remain after clearing
         tab = self.image.get_markers(marker_name=self.image.DEFAULT_MARKER_NAME)
-        self._check_empty_marker_table_return_properties(tab)
+        self._assert_empty_marker_table(tab)
 
         # Check that retrieving a marker set that doesn't exist returns
         # an empty table with the right columns
         tab = self.image.get_markers(marker_name='test1')
-        self._check_empty_marker_table_return_properties(tab)
+        self._assert_empty_marker_table(tab)
 
     def test_get_markers_accepts_list_of_names(self):
         # Check that the get_markers method accepts a list of marker names
@@ -296,7 +296,7 @@ class ImageWidgetAPITest:
         self.image.add_markers(tab, marker_name='test2')
 
         self.image.remove_markers(marker_name='all')
-        self._check_empty_marker_table_return_properties(self.image.get_markers(marker_name='all'))
+        self._assert_empty_marker_table(self.image.get_markers(marker_name='all'))
 
     def test_remove_marker_accepts_list(self):
         data = np.arange(10).reshape(5, 2)
@@ -306,7 +306,7 @@ class ImageWidgetAPITest:
 
         self.image.remove_markers(marker_name=['test1', 'test2'])
         marks = self.image.get_markers(marker_name='all')
-        self._check_empty_marker_table_return_properties(marks)
+        self._assert_empty_marker_table(marks)
 
     def test_adding_markers_as_world(self, data, wcs):
         ndd = NDData(data=data, wcs=wcs)
