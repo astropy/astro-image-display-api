@@ -70,9 +70,12 @@ class ImageWidgetAPITest:
         assert self.image.image_width == width
         assert self.image.image_height == height
 
-    def test_load_fits(self, data):
+    def test_load_fits(self, data, tmp_path):
         hdu = fits.PrimaryHDU(data=data)
-        self.image.load_fits(hdu)
+        image_path = tmp_path / 'test.fits'
+        hdu.header["BUNIT"] = "adu"
+        hdu.writeto(image_path)
+        self.image.load_fits(image_path)
 
     def test_load_nddata(self, data):
         nddata = NDData(data)
