@@ -185,10 +185,6 @@ class ImageViewerInterface(Protocol):
         """
         raise NotImplementedError
 
-    # @abstractmethod
-    # def remove_markers_by_name(self, marker_name=None):
-    #     raise NotImplementedError
-
     @abstractmethod
     def remove_markers(self, marker_name: str | list[str] | None = None) -> None:
         """
@@ -201,10 +197,6 @@ class ImageViewerInterface(Protocol):
             then all markers will be removed.
         """
         raise NotImplementedError
-
-    # @abstractmethod
-    # def get_all_markers(self):
-    #     raise NotImplementedError
 
     @abstractmethod
     def get_markers(self, x_colname: str = 'x', y_colname: str = 'y',
