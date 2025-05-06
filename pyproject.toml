@@ -20,7 +20,25 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: Implementation :: CPython",
 ]
-dependencies = []
+dependencies = [
+  "astropy",
+  "numpy",
+]
+
+[project.optional-dependencies]
+docs = [
+    "sphinx",
+    "sphinx-astropy[confv2]",
+    "sphinx-design",
+    "graphviz",
+]
+test = [
+    "black",
+    "pre-commit",
+    "pytest-astropy",
+    "ruff",
+    "tox",
+]
 
 [project.urls]
 Documentation = "https://github.com/astropy/astro-image-display-api#readme"

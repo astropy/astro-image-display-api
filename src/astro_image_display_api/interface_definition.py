@@ -119,7 +119,7 @@ class ImageViewerInterface(Protocol):
 
     # Marker-related methods
     @abstractmethod
-    def start_marking(self, marker_name: str | None = None) -> None:
+    def start_marking(self, marker_name: str | None = None, marker: Any = None) -> None:
         """
         Start interactive marking of points on the image.
 
@@ -128,6 +128,10 @@ class ImageViewerInterface(Protocol):
         marker_name : str, optional
             The name of the marker set to use. If not given, a unique
             name will be generated.
+
+        marker : Any, optional
+            The marker to use. If not given, a default marker will be
+            used.
         """
         raise NotImplementedError
 
@@ -258,13 +262,13 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def zoom(self) -> None:
+    def zoom(self, val: float) -> None:
         """
         Zoom in or out by the given factor.
 
         Parameters
         ----------
-        val : int
+        val : float
             The zoom level to zoom the image.
             See `zoom_level`.
         """

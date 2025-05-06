@@ -12,6 +12,8 @@ from astropy.table import Table, vstack  # noqa: E402
 from astropy import units as u  # noqa: E402
 from astropy.wcs import WCS  # noqa: E402
 
+__all__ = ['ImageWidgetAPITest']
+
 
 class ImageWidgetAPITest:
     cursor_error_classes = (ValueError)
@@ -51,6 +53,11 @@ class ImageWidgetAPITest:
         assert isinstance(table, Table)
         assert len(table) == 0
         assert sorted(table.colnames) == sorted(['x', 'y', 'coord', 'marker name'])
+
+    def test_default_marker_names(self):
+        # Check only that default names are set to a non-empty string
+        assert self.image.DEFAULT_MARKER_NAME
+        assert self.image.DEFAULT_INTERACTIVE_MARKER_NAME
 
     def test_width_height(self):
         assert self.image.image_width == 250
@@ -314,6 +321,9 @@ class ImageWidgetAPITest:
                                    mark_coord_table['coord'].dec.deg)
 
     def test_stretch(self):
+        # Check that the stretch options is not an empty list
+        assert len(self.image.stretch_options) > 0
+
         original_stretch = self.image.stretch
 
         with pytest.raises(ValueError, match='must be one of'):
@@ -403,12 +413,14 @@ class ImageWidgetAPITest:
     def test_save(self, tmp_path):
         filename = tmp_path / 'woot.png'
         self.image.save(filename)
+        assert filename.is_file()
 
     def test_save_overwrite(self, tmp_path):
         filename = tmp_path / 'woot.png'
 
         # First write should be fine
         self.image.save(filename)
+        assert filename.is_file()
 
         # Second write should raise an error because file exists
         with pytest.raises(FileExistsError):
