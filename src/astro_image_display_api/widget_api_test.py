@@ -99,11 +99,11 @@ class ImageWidgetAPITest:
         self.image.offset_by(10 * u.arcmin, 10 * u.arcmin)
 
         # A mix of pixel and sky should produce an error
-        with pytest.raises(ValueError, match='but dy is of type'):
+        with pytest.raises(u.UnitConversionError, match='are not convertible'):
             self.image.offset_by(10 * u.arcmin, 10)
 
         # A mix of inconsistent units should produce an error
-        with pytest.raises(u.UnitConversionError):
+        with pytest.raises(u.UnitConversionError, match='are not convertible'):
             self.image.offset_by(1 * u.arcsec, 1 * u.AA)
 
     def test_zoom_level(self, data):
