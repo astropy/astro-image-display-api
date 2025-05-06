@@ -269,13 +269,14 @@ class ImageViewerInterface(Protocol):
         """
         raise NotImplementedError
 
-    def zoom(self, val) -> None:
+    @abstractmethod
+    def zoom(self, val: float) -> None:
         """
         Zoom in or out by the given factor.
 
         Parameters
         ----------
-        val : int
+        val : float
             The zoom level to zoom the image.
             See `zoom_level`.
         """

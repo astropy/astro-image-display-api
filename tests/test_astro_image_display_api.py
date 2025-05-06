@@ -24,6 +24,6 @@ def test_api_test_class_completeness():
 
 
     assert all(attr_present), (
-        "ImageWidgetAPITest is does not access these attributes/methods:\n "
+        "ImageWidgetAPITest does not access these attributes/methods:\n "
         f"{"\n".join(attr for attr, present in zip(required_attributes, attr_present) if not present)}. "
     )
