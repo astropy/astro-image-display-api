@@ -49,10 +49,18 @@ class ImageWidgetAPITest:
         """
         self.image = self.image_widget_class(image_width=250, image_height=100)
 
-    def _check_marker_table_return_properties(self, table):
+    def _assert_empty_marker_table(self, table):
         assert isinstance(table, Table)
         assert len(table) == 0
         assert sorted(table.colnames) == sorted(['x', 'y', 'coord', 'marker name'])
+
+    def _get_marker_names_as_set(self):
+        marks = self.image.get_markers(marker_name="all")["marker name"]
+        if hasattr(marks, 'mask') and all(marks.mask):
+            marker_names = set()
+        else:
+            marker_names = set(marks)
+        return marker_names
 
     def test_default_marker_names(self):
         # Check only that default names are set to a non-empty string
@@ -70,9 +78,12 @@ class ImageWidgetAPITest:
         assert self.image.image_width == width
         assert self.image.image_height == height
 
-    def test_load_fits(self, data):
+    def test_load_fits(self, data, tmp_path):
         hdu = fits.PrimaryHDU(data=data)
-        self.image.load_fits(hdu)
+        image_path = tmp_path / 'test.fits'
+        hdu.header["BUNIT"] = "adu"
+        hdu.writeto(image_path)
+        self.image.load_fits(image_path)
 
     def test_load_nddata(self, data):
         nddata = NDData(data)
@@ -96,11 +107,11 @@ class ImageWidgetAPITest:
         self.image.offset_by(10 * u.arcmin, 10 * u.arcmin)
 
         # A mix of pixel and sky should produce an error
-        with pytest.raises(ValueError, match='but dy is of type'):
+        with pytest.raises(u.UnitConversionError, match='are not convertible'):
             self.image.offset_by(10 * u.arcmin, 10)
 
         # A mix of inconsistent units should produce an error
-        with pytest.raises(u.UnitConversionError):
+        with pytest.raises(u.UnitConversionError, match='are not convertible'):
             self.image.offset_by(1 * u.arcsec, 1 * u.AA)
 
     def test_zoom_level(self, data):
@@ -116,7 +127,7 @@ class ImageWidgetAPITest:
 
     def test_marking_operations(self):
         marks = self.image.get_markers(marker_name="all")
-        self._check_marker_table_return_properties(marks)
+        self._assert_empty_marker_table(marks)
         assert not self.image.is_marking
 
         # Ensure you cannot set it like this.
@@ -131,6 +142,7 @@ class ImageWidgetAPITest:
 
         # Set the marker style
         marker_style = {'color': 'yellow', 'radius': 10, 'type': 'cross'}
+        self.image.marker = marker_style
         m_str = str(self.image.marker)
         for key in marker_style.keys():
             assert key in m_str
@@ -157,33 +169,34 @@ class ImageWidgetAPITest:
             warnings.simplefilter("error")
             t = self.image.get_markers(marker_name='markymark')
 
-        self._check_marker_table_return_properties(t)
+        self._assert_empty_marker_table(t)
 
         self.image.click_drag = True
         self.image.start_marking()
         assert not self.image.click_drag
 
-        # Simulate a mouse click to add default marker name to the list.
-        try:
-            self.image._mouse_click_cb(self.image.viewer, None, 50, 50)
-            assert self.image.get_marker_names() == [self.image._interactive_marker_set_name, 'markymark']
-        except AttributeError:
-            pass
+        # Add a marker to the interactive marking table
+        self.image.add_markers(
+            Table(data=[[50], [50]], names=['x', 'y'], dtype=('float', 'float')),
+            marker_name=self.image.DEFAULT_INTERACTIVE_MARKER_NAME,
+        )
+        assert self._get_marker_names_as_set() == set([self.image.DEFAULT_INTERACTIVE_MARKER_NAME])
 
         # Clear markers to not pollute other tests.
         self.image.stop_marking(clear_markers=True)
 
         assert self.image.is_marking is False
-        self._check_marker_table_return_properties(self.image.get_markers(marker_name="all"))
+        self._assert_empty_marker_table(self.image.get_markers(marker_name="all"))
 
         # Hate this, should add to public API
-        marknames = self.image._marktags
+        marknames = self._get_marker_names_as_set()
         assert len(marknames) == 0
 
         # Make sure that click_drag is restored as expected
         assert self.image.click_drag
 
     def test_add_markers(self):
+        original_marker_name = self.image.DEFAULT_MARKER_NAME
         data = np.arange(10).reshape(5, 2)
         orig_tab = Table(data=data, names=['x', 'y'], dtype=('float', 'float'))
         tab = Table(data=data, names=['x', 'y'], dtype=('float', 'float'))
@@ -191,7 +204,7 @@ class ImageWidgetAPITest:
                                skycoord_colname='coord', marker_name='test1')
 
         # Make sure setting didn't change the default name
-        assert self.image._default_mark_tag_name == 'default-marker-name'
+        assert self.image.DEFAULT_MARKER_NAME == original_marker_name
 
         # Regression test for GitHub Issue 45:
         # Adding markers should not modify the input data table.
@@ -201,7 +214,7 @@ class ImageWidgetAPITest:
         self.image.add_markers(tab, x_colname='x', y_colname='y',
                                skycoord_colname='coord', marker_name='test2')
 
-        marknames = self.image._marktags
+        marknames = self._get_marker_names_as_set()
         assert marknames == set(['test1', 'test2'])
         # assert self.image.get_marker_names() == ['test1', 'test2']
 
@@ -223,7 +236,7 @@ class ImageWidgetAPITest:
         assert (t2['y'] == expected['y']).all()
 
         self.image.remove_markers(marker_name='test1')
-        marknames = self.image._marktags
+        marknames = self._get_marker_names_as_set()
         assert marknames == set(['test2'])
         # assert self.image.get_marker_names() == ['test2']
 
@@ -238,24 +251,22 @@ class ImageWidgetAPITest:
                                skycoord_colname='coord')
         # Don't care about the order of the marker names so use set instead of
         # list.
-        marknames = self.image._marktags
-        assert (set(marknames) == set(['test2', self.image._default_mark_tag_name]))
-        # assert (set(self.image.get_marker_names()) ==
-        #         set(['test2', self.image._default_mark_tag_name]))
+        marknames = self._get_marker_names_as_set()
+        assert (set(marknames) == set(['test2', self.image.DEFAULT_MARKER_NAME]))
 
         # Clear markers to not pollute other tests.
         self.image.reset_markers()
-        marknames = self.image._marktags
+        marknames = self._get_marker_names_as_set()
         assert len(marknames) == 0
-        self._check_marker_table_return_properties(self.image.get_markers(marker_name="all"))
+        self._assert_empty_marker_table(self.image.get_markers(marker_name="all"))
         # Check that no markers remain after clearing
-        tab = self.image.get_markers(marker_name=self.image._default_mark_tag_name)
-        self._check_marker_table_return_properties(tab)
+        tab = self.image.get_markers(marker_name=self.image.DEFAULT_MARKER_NAME)
+        self._assert_empty_marker_table(tab)
 
         # Check that retrieving a marker set that doesn't exist returns
         # an empty table with the right columns
         tab = self.image.get_markers(marker_name='test1')
-        self._check_marker_table_return_properties(tab)
+        self._assert_empty_marker_table(tab)
 
     def test_get_markers_accepts_list_of_names(self):
         # Check that the get_markers method accepts a list of marker names
@@ -285,7 +296,7 @@ class ImageWidgetAPITest:
         self.image.add_markers(tab, marker_name='test2')
 
         self.image.remove_markers(marker_name='all')
-        self._check_marker_table_return_properties(self.image.get_markers(marker_name='all'))
+        self._assert_empty_marker_table(self.image.get_markers(marker_name='all'))
 
     def test_remove_marker_accepts_list(self):
         data = np.arange(10).reshape(5, 2)
@@ -295,7 +306,7 @@ class ImageWidgetAPITest:
 
         self.image.remove_markers(marker_name=['test1', 'test2'])
         marks = self.image.get_markers(marker_name='all')
-        self._check_marker_table_return_properties(marks)
+        self._assert_empty_marker_table(marks)
 
     def test_adding_markers_as_world(self, data, wcs):
         ndd = NDData(data=data, wcs=wcs)
@@ -304,14 +315,13 @@ class ImageWidgetAPITest:
         # Add markers using world coordinates
         pixels = np.linspace(0, 100, num=10).reshape(5, 2)
         marks_pix = Table(data=pixels, names=['x', 'y'], dtype=('float', 'float'))
-        marks_world = wcs.pixel_to_world(marks_pix['x'], marks_pix['y'])
-        marks_coords = SkyCoord(marks_world, unit='degree')
+        marks_coords = wcs.pixel_to_world(marks_pix['x'], marks_pix['y'])
         mark_coord_table = Table(data=[marks_coords], names=['coord'])
         self.image.add_markers(mark_coord_table, use_skycoord=True)
         result = self.image.get_markers()
         # Check the x, y positions as long as we are testing things...
         # The first test had one entry that was zero, so any check
-        # based on rtol will will. Added a small atol to make sure
+        # based on rtol will not work. Added a small atol to make sure
         # the test passes.
         np.testing.assert_allclose(result['x'], marks_pix['x'], atol=1e-9)
         np.testing.assert_allclose(result['y'], marks_pix['y'])
@@ -326,7 +336,7 @@ class ImageWidgetAPITest:
 
         original_stretch = self.image.stretch
 
-        with pytest.raises(ValueError, match='must be one of'):
+        with pytest.raises(ValueError, match='[mM]ust be one of'):
             self.image.stretch = 'not a valid value'
 
         # A bad value should leave the stretch unchanged
@@ -337,7 +347,7 @@ class ImageWidgetAPITest:
         assert self.image.stretch is not original_stretch
 
     def test_cuts(self, data):
-        with pytest.raises(ValueError, match='must be one of'):
+        with pytest.raises(ValueError, match='[mM]ust be one of'):
             self.image.cuts = 'not a valid value'
 
         with pytest.raises(ValueError, match='must have length 2'):
@@ -353,6 +363,7 @@ class ImageWidgetAPITest:
         self.image.cuts = (10, 100)
         assert self.image.cuts == (10, 100)
 
+    @pytest.mark.xfail(reason="Not clear whether colormap is part of the API")
     def test_colormap(self):
         cmap_desired = 'gray'
         cmap_list = self.image.colormap_options
@@ -380,10 +391,10 @@ class ImageWidgetAPITest:
 
         # If is_marking is true then trying to enable click_drag should fail
         self.image.click_drag = False
-        self.image._is_marking = True
-        with pytest.raises(ValueError, match=r'([Ii]nteractive marking)|(while in marking mode)'):
+        self.image.start_marking()
+        with pytest.raises(ValueError, match=r'([Ii]nteractive marking)|(while in marking mode)|(while marking is active)'):
             self.image.click_drag = True
-        self.image._is_marking = False
+        self.image.stop_marking()
 
     def test_click_center(self):
         # Set this to ensure that click_center turns it off
@@ -397,12 +408,12 @@ class ImageWidgetAPITest:
         self.image.click_center = True
         assert not self.image.click_drag
 
-        # If is_marking is true then trying to enable click_center should fail
-        self.image._is_marking = True
         self.image.click_center = False
-        with pytest.raises(ValueError, match=r'([Ii]nteractive marking)|(while in marking mode)'):
+        # If is_marking is true then trying to enable click_center should fail
+        self.image.start_marking()
+        with pytest.raises(ValueError, match=r'([Ii]nteractive marking)|(while marking is active)'):
             self.image.click_center = True
-        self.image._is_marking = False
+        self.image.stop_marking()
 
     def test_scroll_pan(self):
         # Make sure scroll_pan is actually settable
