@@ -54,6 +54,14 @@ class ImageWidgetAPITest:
         assert len(table) == 0
         assert sorted(table.colnames) == sorted(['x', 'y', 'coord', 'marker name'])
 
+    def _get_marker_names_as_set(self):
+        marks = self.image.get_markers(marker_name="all")["marker name"]
+        if hasattr(marks, 'mask') and all(marks.mask):
+            marker_names = set()
+        else:
+            marker_names = set(marks)
+        return marker_names
+
     def test_default_marker_names(self):
         # Check only that default names are set to a non-empty string
         assert self.image.DEFAULT_MARKER_NAME
