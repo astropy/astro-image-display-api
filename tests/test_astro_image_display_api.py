@@ -2,7 +2,6 @@ from astropy.utils.data import get_pkg_data_contents
 
 from astro_image_display_api.interface_definition import ImageViewerInterface
 
-
 def test_api_test_class_completeness():
     """
     Test that the ImageWidgetAPITest class is complete and has tests
