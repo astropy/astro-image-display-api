@@ -1,6 +1,6 @@
 from astro_image_display_api.dummy_viewer import ImageViewer
-from astro_image_display_api.interface_definition import ImageViewerInterface
-from astro_image_display_api.widget_api_test import ImageWidgetAPITest
+from astro_image_display_api import ImageViewerInterface
+from astro_image_display_api import ImageWidgetAPITest
 
 
 def test_instance():
