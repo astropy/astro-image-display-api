@@ -33,7 +33,7 @@ class ImageViewer:
     autocut_options: tuple = ("minmax", "zscale", "asinh", "percentile", "histogram")
     _cursor: str = ImageViewerInterface.ALLOWED_CURSOR_LOCATIONS[0]
     marker: Any = "marker"
-    _cuts: str | tuple[float] = (0, 1)
+    _cuts: str | tuple[float, float] = (0, 1)
     _stretch: str = "linear"
     # viewer: Any
 
