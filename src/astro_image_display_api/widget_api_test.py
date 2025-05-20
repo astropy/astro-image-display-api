@@ -64,7 +64,6 @@ class ImageWidgetAPITest:
     def test_default_marker_names(self):
         # Check only that default names are set to a non-empty string
         assert self.image.DEFAULT_MARKER_NAME
-        assert self.image.DEFAULT_INTERACTIVE_MARKER_NAME
 
     def test_width_height(self):
         assert self.image.image_width == 250
@@ -124,7 +123,14 @@ class ImageWidgetAPITest:
         self.image.zoom(2)
         assert self.image.zoom_level == 6  # 3 x 2
 
-    # TODO: add test of marker properties
+    def test_marker_properties(self):
+        # Set the marker style
+        marker_style = {'color': 'yellow', 'radius': 10, 'type': 'cross'}
+        self.image.marker = marker_style
+        m_str = str(self.image.marker)
+        for key in marker_style.keys():
+            assert key in m_str
+
     # TODO: add test that checks that retrieving markers with an unknown name issues no error
 
     def test_add_markers(self):
