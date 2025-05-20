@@ -1,5 +1,4 @@
 # TODO: How to enable switching out backend and still run the same tests?
-import warnings
 
 import pytest
 

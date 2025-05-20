@@ -13,7 +13,6 @@ from numpy.typing import ArrayLike
 ALLOWED_CURSOR_LOCATIONS = ('top', 'bottom', None)
 
 DEFAULT_MARKER_NAME = 'default-marker-name'
-DEFAULT_INTERACTIVE_MARKER_NAME = 'interactive-markers'
 
 # List of marker names that are for internal use only
 RESERVED_MARKER_SET_NAMES = ('all',)
@@ -50,9 +49,6 @@ class ImageViewerInterface(Protocol):
 
     # Default marker name for marking via API
     DEFAULT_MARKER_NAME: str = DEFAULT_MARKER_NAME
-
-    # Default marker name for interactive marking
-    DEFAULT_INTERACTIVE_MARKER_NAME: str = DEFAULT_INTERACTIVE_MARKER_NAME
 
     # The methods, grouped loosely by purpose
 

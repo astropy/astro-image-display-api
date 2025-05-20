@@ -45,9 +45,6 @@ class ImageViewer:
     # Default marker name for marking via API
     DEFAULT_MARKER_NAME: str = ImageViewerInterface.DEFAULT_MARKER_NAME
 
-    # Default marker name for interactive marking
-    DEFAULT_INTERACTIVE_MARKER_NAME: str = ImageViewerInterface.DEFAULT_INTERACTIVE_MARKER_NAME
-
     # some internal variable for keeping track of viewer state
     _interactive_marker_name: str = ""
     _previous_click_center: bool = False
