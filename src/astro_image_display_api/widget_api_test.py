@@ -125,75 +125,8 @@ class ImageWidgetAPITest:
         self.image.zoom(2)
         assert self.image.zoom_level == 6  # 3 x 2
 
-    def test_marking_operations(self):
-        marks = self.image.get_markers(marker_name="all")
-        self._assert_empty_marker_table(marks)
-        assert not self.image.is_marking
-
-        # Ensure you cannot set it like this.
-        with pytest.raises(AttributeError):
-            self.image.is_marking = True
-
-        # Setting these to check that start_marking affects them.
-        self.image.click_center = True  # Disables click_drag
-        assert self.image.click_center
-        self.image.scroll_pan = False
-        assert not self.image.scroll_pan
-
-        # Set the marker style
-        marker_style = {'color': 'yellow', 'radius': 10, 'type': 'cross'}
-        self.image.marker = marker_style
-        m_str = str(self.image.marker)
-        for key in marker_style.keys():
-            assert key in m_str
-
-        self.image.start_marking(marker_name='markymark', marker=marker_style)
-        assert self.image.is_marking
-        assert self.image.marker == marker_style
-        assert not self.image.click_center
-        assert not self.image.click_drag
-
-        # scroll_pan better activate when marking otherwise there is
-        # no way to pan while interactively marking
-        assert self.image.scroll_pan
-
-        # Make sure that when we stop_marking we get our old controls back.
-        self.image.stop_marking()
-        assert self.image.click_center
-        assert not self.image.click_drag
-        assert not self.image.scroll_pan
-
-        # Make sure no warning is issued when trying to retrieve markers
-        # with a name that does not exist.
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            t = self.image.get_markers(marker_name='markymark')
-
-        self._assert_empty_marker_table(t)
-
-        self.image.click_drag = True
-        self.image.start_marking()
-        assert not self.image.click_drag
-
-        # Add a marker to the interactive marking table
-        self.image.add_markers(
-            Table(data=[[50], [50]], names=['x', 'y'], dtype=('float', 'float')),
-            marker_name=self.image.DEFAULT_INTERACTIVE_MARKER_NAME,
-        )
-        assert self._get_marker_names_as_set() == set([self.image.DEFAULT_INTERACTIVE_MARKER_NAME])
-
-        # Clear markers to not pollute other tests.
-        self.image.stop_marking(clear_markers=True)
-
-        assert self.image.is_marking is False
-        self._assert_empty_marker_table(self.image.get_markers(marker_name="all"))
-
-        # Hate this, should add to public API
-        marknames = self._get_marker_names_as_set()
-        assert len(marknames) == 0
-
-        # Make sure that click_drag is restored as expected
-        assert self.image.click_drag
+    # TODO: add test of marker properties
+    # TODO: add test that checks that retrieving markers with an unknown name issues no error
 
     def test_add_markers(self):
         original_marker_name = self.image.DEFAULT_MARKER_NAME

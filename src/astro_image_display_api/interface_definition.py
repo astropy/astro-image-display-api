@@ -34,7 +34,6 @@ class ImageViewerInterface(Protocol):
     image_width: int
     image_height: int
     zoom_level: float
-    is_marking: bool
     stretch_options: tuple
     autocut_options: tuple
     cursor: str
@@ -110,37 +109,6 @@ class ImageViewerInterface(Protocol):
         overwrite : bool, optional
             If `True`, overwrite the file if it exists. Default is
             `False`.
-        """
-        raise NotImplementedError
-
-    # Marker-related methods
-    @abstractmethod
-    def start_marking(self, marker_name: str | None = None, marker: Any = None) -> None:
-        """
-        Start interactive marking of points on the image.
-
-        Parameters
-        ----------
-        marker_name : str, optional
-            The name of the marker set to use. If not given, a unique
-            name will be generated.
-
-        marker : Any, optional
-            The marker to use. If not given, a default marker will be
-            used.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def stop_marking(self, clear_markers: bool = False) -> None:
-        """
-        Stop interactive marking of points on the image.
-
-        Parameters
-        ----------
-        clear_markers : bool, optional
-            If `True`, clear the markers that were created during
-            interactive marking. Default is `False`.
         """
         raise NotImplementedError
 
