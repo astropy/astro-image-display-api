@@ -49,41 +49,19 @@ class ImageViewerInterface(Protocol):
 
     # The methods, grouped loosely by purpose
 
-    # Methods for loading data
+    # Method for loading data
     @abstractmethod
-    def load_fits(self, file: str | os.PathLike) -> None:
+    def load(self, data: Any) -> None:
         """
-        Load a FITS file into the viewer.
+        Load data into the viewer. At a minimum, this should allow a FITS file
+        to be loaded. Viewers may allow additional data types to be loaded, such as
+        2D arrays or `astropy.nddata.NDData` objects.
 
         Parameters
         ----------
-        file : str or `astropy.io.fits.HDU`
-            The FITS file to load. If a string, it can be a URL or a
-            file path.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def load_array(self, array: ArrayLike) -> None:
-        """
-        Load a 2D array into the viewer.
-
-        Parameters
-        ----------
-        array : array-like
-            The array to load.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def load_nddata(self, data: NDData) -> None:
-        """
-        Load an `astropy.nddata.NDData` object into the viewer.
-
-        Parameters
-        ----------
-        data : `astropy.nddata.NDData`
-            The NDData object to load.
+        data : Any
+            The data to load. This can be a FITS file, a 2D array,
+            or an `astropy.nddata.NDData` object.
         """
         raise NotImplementedError
 
