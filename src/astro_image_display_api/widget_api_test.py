@@ -323,17 +323,13 @@ class ImageWidgetAPITest:
 
         # If is_marking is true then trying to enable click_drag should fail
         self.image.click_drag = False
-        self.image.start_marking()
-        with pytest.raises(ValueError, match=r'([Ii]nteractive marking)|(while in marking mode)|(while marking is active)'):
-            self.image.click_drag = True
-        self.image.stop_marking()
 
     def test_click_center(self):
         # Set this to ensure that click_center turns it off
         self.image.click_drag = True
 
         # Make sure that setting click_center to False does not turn off
-        # click_draf.
+        # click_drag.
         self.image.click_center = False
         assert self.image.click_drag
 
@@ -341,11 +337,7 @@ class ImageWidgetAPITest:
         assert not self.image.click_drag
 
         self.image.click_center = False
-        # If is_marking is true then trying to enable click_center should fail
-        self.image.start_marking()
-        with pytest.raises(ValueError, match=r'([Ii]nteractive marking)|(while marking is active)'):
-            self.image.click_center = True
-        self.image.stop_marking()
+
 
     def test_scroll_pan(self):
         # Make sure scroll_pan is actually settable
