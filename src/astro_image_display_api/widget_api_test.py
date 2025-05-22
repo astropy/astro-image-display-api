@@ -76,12 +76,21 @@ class ImageWidgetAPITest:
         assert self.image.image_width == width
         assert self.image.image_height == height
 
-    def test_load(self, data, tmp_path):
-        hdu = fits.PrimaryHDU(data=data)
-        image_path = tmp_path / 'test.fits'
-        hdu.header["BUNIT"] = "adu"
-        hdu.writeto(image_path)
-        self.image.load(image_path)
+    @pytest.mark.parametrize("load_type", ["fits", "nddata", "array"])
+    def test_load(self, data, tmp_path, load_type):
+        match load_type:
+            case "fits":
+                hdu = fits.PrimaryHDU(data=data)
+                image_path = tmp_path / 'test.fits'
+                hdu.header["BUNIT"] = "adu"
+                hdu.writeto(image_path)
+                load_arg = image_path
+            case "nddata":
+                load_arg = NDData(data=data)
+            case "array":
+                load_arg = data
+
+        self.image.load(load_arg)
 
     def test_center_on(self):
         self.image.center_on((10, 10))  # X, Y
