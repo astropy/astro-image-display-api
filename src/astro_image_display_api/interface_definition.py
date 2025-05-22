@@ -13,7 +13,6 @@ from numpy.typing import ArrayLike
 ALLOWED_CURSOR_LOCATIONS = ('top', 'bottom', None)
 
 DEFAULT_MARKER_NAME = 'default-marker-name'
-DEFAULT_INTERACTIVE_MARKER_NAME = 'interactive-markers'
 
 # List of marker names that are for internal use only
 RESERVED_MARKER_SET_NAMES = ('all',)
@@ -34,7 +33,6 @@ class ImageViewerInterface(Protocol):
     image_width: int
     image_height: int
     zoom_level: float
-    is_marking: bool
     stretch_options: tuple
     autocut_options: tuple
     cursor: str
@@ -51,9 +49,6 @@ class ImageViewerInterface(Protocol):
 
     # Default marker name for marking via API
     DEFAULT_MARKER_NAME: str = DEFAULT_MARKER_NAME
-
-    # Default marker name for interactive marking
-    DEFAULT_INTERACTIVE_MARKER_NAME: str = DEFAULT_INTERACTIVE_MARKER_NAME
 
     # The methods, grouped loosely by purpose
 
@@ -110,37 +105,6 @@ class ImageViewerInterface(Protocol):
         overwrite : bool, optional
             If `True`, overwrite the file if it exists. Default is
             `False`.
-        """
-        raise NotImplementedError
-
-    # Marker-related methods
-    @abstractmethod
-    def start_marking(self, marker_name: str | None = None, marker: Any = None) -> None:
-        """
-        Start interactive marking of points on the image.
-
-        Parameters
-        ----------
-        marker_name : str, optional
-            The name of the marker set to use. If not given, a unique
-            name will be generated.
-
-        marker : Any, optional
-            The marker to use. If not given, a default marker will be
-            used.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def stop_marking(self, clear_markers: bool = False) -> None:
-        """
-        Stop interactive marking of points on the image.
-
-        Parameters
-        ----------
-        clear_markers : bool, optional
-            If `True`, clear the markers that were created during
-            interactive marking. Default is `False`.
         """
         raise NotImplementedError
 

@@ -28,7 +28,6 @@ class ImageViewer:
     image_width: int = 0
     image_height: int = 0
     zoom_level: float = 1
-    _is_marking: bool = False
     stretch_options: tuple = ("linear", "log", "sqrt")
     autocut_options: tuple = ("minmax", "zscale", "asinh", "percentile", "histogram")
     _cursor: str = ImageViewerInterface.ALLOWED_CURSOR_LOCATIONS[0]
@@ -46,9 +45,6 @@ class ImageViewer:
     # Default marker name for marking via API
     DEFAULT_MARKER_NAME: str = ImageViewerInterface.DEFAULT_MARKER_NAME
 
-    # Default marker name for interactive marking
-    DEFAULT_INTERACTIVE_MARKER_NAME: str = ImageViewerInterface.DEFAULT_INTERACTIVE_MARKER_NAME
-
     # some internal variable for keeping track of viewer state
     _interactive_marker_name: str = ""
     _previous_click_center: bool = False
@@ -61,17 +57,11 @@ class ImageViewer:
 
     # Some properties where we need to control what happens
     @property
-    def is_marking(self) -> bool:
-        return self._is_marking
-
-    @property
     def click_center(self) -> bool:
         return self._click_center
 
     @click_center.setter
     def click_center(self, value: bool) -> None:
-        if self.is_marking:
-            raise ValueError("Cannot set click_center while marking is active.")
         self._click_center = value
         self._click_drag = not value
 
@@ -80,8 +70,6 @@ class ImageViewer:
         return self._click_drag
     @click_drag.setter
     def click_drag(self, value: bool) -> None:
-        if self.is_marking:
-            raise ValueError("Cannot set click_drag while marking is active.")
         self._click_drag = value
         self._click_center = not value
 
@@ -198,45 +186,6 @@ class ImageViewer:
         p.write_text("This is a dummy file. The viewer does not save anything.")
 
     # Marker-related methods
-    def start_marking(self, marker_name: str | None = None, marker: Any = None) -> None:
-        """
-        Start interactive marking of points on the image.
-
-        Parameters
-        ----------
-        marker_name : str, optional
-            The name of the marker set to use. If not given, a unique
-            name will be generated.
-        """
-        self._is_marking = True
-        self._previous_click_center = self.click_center
-        self._previous_click_drag = self.click_drag
-        self._previous_marker = self.marker
-        self._previous_scroll_pan = self.scroll_pan
-        self._click_center = False
-        self._click_drag = False
-        self.scroll_pan = True
-        self._interactive_marker_name = marker_name if marker_name else self.DEFAULT_INTERACTIVE_MARKER_NAME
-        self.marker = marker if marker else self.DEFAULT_INTERACTIVE_MARKER_NAME
-
-    def stop_marking(self, clear_markers: bool = False) -> None:
-        """
-        Stop interactive marking of points on the image.
-
-        Parameters
-        ----------
-        clear_markers : bool, optional
-            If `True`, clear the markers that were created during
-            interactive marking. Default is `False`.
-        """
-        self._is_marking = False
-        self.click_center = self._previous_click_center
-        self.click_drag = self._previous_click_drag
-        self.scroll_pan = self._previous_scroll_pan
-        self.marker = self._previous_marker
-        if clear_markers:
-            self.remove_markers(self._interactive_marker_name)
-
     def add_markers(self, table: Table, x_colname: str = 'x', y_colname: str = 'y',
                     skycoord_colname: str = 'coord', use_skycoord: bool = False,
                     marker_name: str | None = None) -> None:
