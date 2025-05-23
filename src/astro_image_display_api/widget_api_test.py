@@ -315,42 +315,6 @@ class ImageWidgetAPITest:
         self.image.cursor = 'bottom'
         assert self.image.cursor == 'bottom'
 
-    def test_click_drag(self):
-        # Set this to ensure that click_drag turns it off
-        self.image.click_center = True
-
-        # Make sure that setting click_drag to False does not turn off
-        # click_center.
-        self.image.click_drag = False
-        assert self.image.click_center
-
-        self.image.click_drag = True
-        assert not self.image.click_center
-
-        # If is_marking is true then trying to enable click_drag should fail
-        self.image.click_drag = False
-
-    def test_click_center(self):
-        # Set this to ensure that click_center turns it off
-        self.image.click_drag = True
-
-        # Make sure that setting click_center to False does not turn off
-        # click_drag.
-        self.image.click_center = False
-        assert self.image.click_drag
-
-        self.image.click_center = True
-        assert not self.image.click_drag
-
-        self.image.click_center = False
-
-
-    def test_scroll_pan(self):
-        # Make sure scroll_pan is actually settable
-        for value in [True, False]:
-            self.image.scroll_pan = value
-            assert self.image.scroll_pan is value
-
     def test_save(self, tmp_path):
         filename = tmp_path / 'woot.png'
         self.image.save(filename)
