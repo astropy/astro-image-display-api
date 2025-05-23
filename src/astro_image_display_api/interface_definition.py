@@ -6,6 +6,7 @@ from astropy.coordinates import SkyCoord
 from astropy.nddata import NDData
 from astropy.table import Table
 from astropy.units import Quantity
+from astropy.visualization import BaseInterval, BaseStretch
 
 from numpy.typing import ArrayLike
 
@@ -34,8 +35,8 @@ class ImageViewerInterface(Protocol):
     autocut_options: tuple
     cursor: str
     marker: Any
-    cuts: Any
-    stretch: str
+    cuts: tuple | BaseInterval
+    stretch: BaseStretch
     # viewer: Any
 
     # Allowed locations for cursor display

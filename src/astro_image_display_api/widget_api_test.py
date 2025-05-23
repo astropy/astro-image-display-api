@@ -9,6 +9,7 @@ from astropy.nddata import NDData  # noqa: E402
 from astropy.table import Table, vstack  # noqa: E402
 from astropy import units as u  # noqa: E402
 from astropy.wcs import WCS  # noqa: E402
+from astropy.visualization import AsymmetricPercentileInterval, LogStretch, ManualInterval
 
 __all__ = ['ImageWidgetAPITest']
 
@@ -279,26 +280,27 @@ class ImageWidgetAPITest:
         # A bad value should leave the stretch unchanged
         assert self.image.stretch is original_stretch
 
-        self.image.stretch = 'log'
+        self.image.stretch = LogStretch()
         # A valid value should change the stretch
         assert self.image.stretch is not original_stretch
+        assert isinstance(self.image.stretch, LogStretch)
 
     def test_cuts(self, data):
-        with pytest.raises(ValueError, match='[mM]ust be one of'):
+        assert len(self.image.autocut_options) > 0
+        with pytest.raises(ValueError, match='[mM]ust be'):
             self.image.cuts = 'not a valid value'
 
-        with pytest.raises(ValueError, match='must have length 2'):
+        with pytest.raises(ValueError, match='[mM]ust be'):
             self.image.cuts = (1, 10, 100)
-
-        assert 'histogram' in self.image.autocut_options
 
         # Setting using histogram requires data
         self.image.load_image(data)
-        self.image.cuts = 'histogram'
-        assert len(self.image.cuts) == 2
+        self.image.cuts = AsymmetricPercentileInterval(0.1, 99.9)
+        assert isinstance(self.image.cuts, AsymmetricPercentileInterval)
 
         self.image.cuts = (10, 100)
-        assert self.image.cuts == (10, 100)
+        assert isinstance(self.image.cuts, ManualInterval)
+        assert self.image.cuts.get_limits(data) == (10, 100)
 
     @pytest.mark.skip(reason="Not clear whether colormap is part of the API")
     def test_colormap(self):

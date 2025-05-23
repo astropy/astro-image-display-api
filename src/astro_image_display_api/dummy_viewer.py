@@ -8,6 +8,7 @@ from astropy.nddata import CCDData, NDData
 from astropy.table import Table, vstack
 from astropy.units import Quantity, get_physical_type
 from astropy.wcs import WCS
+from astropy.visualization import BaseInterval, BaseStretch, ManualInterval
 from numpy.typing import ArrayLike
 
 from .interface_definition import ImageViewerInterface
@@ -50,12 +51,12 @@ class ImageViewer:
     _center: tuple[float, float] = (0.0, 0.0)
 
     @property
-    def stretch(self) -> str:
+    def stretch(self) -> BaseStretch:
         return self._stretch
 
     @stretch.setter
-    def stretch(self, value: str) -> None:
-        if value not in self.stretch_options:
+    def stretch(self, value: BaseStretch) -> None:
+        if not isinstance(value, BaseStretch):
             raise ValueError(f"Stretch option {value} is not valid. Must be one of {self.stretch_options}.")
         self._stretch = value
 
@@ -65,16 +66,13 @@ class ImageViewer:
 
     @cuts.setter
     def cuts(self, value: tuple) -> None:
-        if isinstance(value, str):
-            if value not in self.autocut_options:
-                raise ValueError(f"Cut option {value} is not valid. Must be one of {self.autocut_options}.")
-            # A real viewer would calculate the cuts based on the data
-            self._cuts = (0, 1)
-            return
+        if isinstance(value, tuple) and len(value) == 2:
+            self._cuts = ManualInterval(value[0], value[1])
+        elif isinstance(value, BaseInterval):
+            self._cuts = value
+        else:
+            raise ValueError("Cuts must be an Astropy.visualization Interval object or a tuple of two values.")
 
-        if len(value) != 2:
-            raise ValueError("Cuts must have length 2.")
-        self._cuts = value
 
     @property
     def cursor(self) -> str:
