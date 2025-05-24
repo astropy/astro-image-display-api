@@ -31,8 +31,6 @@ class ImageViewerInterface(Protocol):
     image_width: int
     image_height: int
     zoom_level: float
-    stretch_options: tuple
-    autocut_options: tuple
     cursor: str
     marker: Any
     cuts: tuple | BaseInterval

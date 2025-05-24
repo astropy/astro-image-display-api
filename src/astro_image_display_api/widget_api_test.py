@@ -269,12 +269,9 @@ class ImageWidgetAPITest:
                                    mark_coord_table['coord'].dec.deg)
 
     def test_stretch(self):
-        # Check that the stretch options is not an empty list
-        assert len(self.image.stretch_options) > 0
-
         original_stretch = self.image.stretch
 
-        with pytest.raises(ValueError, match='[mM]ust be one of'):
+        with pytest.raises(ValueError, match=r'Stretch.*not valid.*'):
             self.image.stretch = 'not a valid value'
 
         # A bad value should leave the stretch unchanged
@@ -286,7 +283,6 @@ class ImageWidgetAPITest:
         assert isinstance(self.image.stretch, LogStretch)
 
     def test_cuts(self, data):
-        assert len(self.image.autocut_options) > 0
         with pytest.raises(ValueError, match='[mM]ust be'):
             self.image.cuts = 'not a valid value'
 

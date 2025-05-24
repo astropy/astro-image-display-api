@@ -26,8 +26,6 @@ class ImageViewer:
     image_width: int = 0
     image_height: int = 0
     zoom_level: float = 1
-    stretch_options: tuple = ("linear", "log", "sqrt")
-    autocut_options: tuple = ("minmax", "zscale", "asinh", "percentile", "histogram")
     _cursor: str = ImageViewerInterface.ALLOWED_CURSOR_LOCATIONS[0]
     marker: Any = "marker"
     _cuts: str | tuple[float, float] = (0, 1)
@@ -57,7 +55,7 @@ class ImageViewer:
     @stretch.setter
     def stretch(self, value: BaseStretch) -> None:
         if not isinstance(value, BaseStretch):
-            raise ValueError(f"Stretch option {value} is not valid. Must be one of {self.stretch_options}.")
+            raise ValueError(f"Stretch option {value} is not valid. Must be an Astropy.visualization Stretch object.")
         self._stretch = value
 
     @property
