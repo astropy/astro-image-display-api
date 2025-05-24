@@ -27,9 +27,6 @@ class ImageViewerInterface(Protocol):
     # These are attributes, not methods. The type annotations are there
     # to make sure Protocol knows they are attributes. Python does not
     # do any checking at all of these types.
-    click_center: bool
-    click_drag: bool
-    scroll_pan: bool
     image_width: int
     image_height: int
     zoom_level: float

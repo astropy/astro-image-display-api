@@ -22,9 +22,6 @@ class ImageViewer:
     # These are attributes, not methods. The type annotations are there
     # to make sure Protocol knows they are attributes. Python does not
     # do any checking at all of these types.
-    _click_center: bool = False
-    _click_drag: bool = True
-    scroll_pan: bool = False
     image_width: int = 0
     image_height: int = 0
     zoom_level: float = 1
@@ -47,31 +44,10 @@ class ImageViewer:
 
     # some internal variable for keeping track of viewer state
     _interactive_marker_name: str = ""
-    _previous_click_center: bool = False
-    _previous_click_drag: bool = True
-    _previous_scroll_pan: bool = False
     _previous_marker: Any = ""
     _markers: dict[str, Table] = field(default_factory=dict)
     _wcs: WCS | None = None
     _center: tuple[float, float] = (0.0, 0.0)
-
-    # Some properties where we need to control what happens
-    @property
-    def click_center(self) -> bool:
-        return self._click_center
-
-    @click_center.setter
-    def click_center(self, value: bool) -> None:
-        self._click_center = value
-        self._click_drag = not value
-
-    @property
-    def click_drag(self) -> bool:
-        return self._click_drag
-    @click_drag.setter
-    def click_drag(self, value: bool) -> None:
-        self._click_drag = value
-        self._click_center = not value
 
     @property
     def stretch(self) -> str:
