@@ -8,6 +8,7 @@ from astropy.nddata import CCDData, NDData
 from astropy.table import Table, vstack
 from astropy.units import Quantity, get_physical_type
 from astropy.wcs import WCS
+from astropy.visualization import AsymmetricPercentileInterval, BaseInterval, BaseStretch, LinearStretch, ManualInterval
 from numpy.typing import ArrayLike
 
 from .interface_definition import ImageViewerInterface
@@ -25,12 +26,10 @@ class ImageViewer:
     image_width: int = 0
     image_height: int = 0
     zoom_level: float = 1
-    stretch_options: tuple = ("linear", "log", "sqrt")
-    autocut_options: tuple = ("minmax", "zscale", "asinh", "percentile", "histogram")
     _cursor: str = ImageViewerInterface.ALLOWED_CURSOR_LOCATIONS[0]
     marker: Any = "marker"
-    _cuts: str | tuple[float, float] = (0, 1)
-    _stretch: str = "linear"
+    _cuts: BaseInterval | tuple[float, float] = AsymmetricPercentileInterval(upper_percentile=95)
+    _stretch: BaseStretch = LinearStretch
     # viewer: Any
 
     # Allowed locations for cursor display
@@ -49,32 +48,24 @@ class ImageViewer:
     _wcs: WCS | None = None
     _center: tuple[float, float] = (0.0, 0.0)
 
-    @property
-    def stretch(self) -> str:
+    def get_stretch(self) -> BaseStretch:
         return self._stretch
 
-    @stretch.setter
-    def stretch(self, value: str) -> None:
-        if value not in self.stretch_options:
-            raise ValueError(f"Stretch option {value} is not valid. Must be one of {self.stretch_options}.")
+    def set_stretch(self, value: BaseStretch) -> None:
+        if not isinstance(value, BaseStretch):
+            raise ValueError(f"Stretch option {value} is not valid. Must be an Astropy.visualization Stretch object.")
         self._stretch = value
 
-    @property
-    def cuts(self) -> tuple:
+    def get_cuts(self) -> tuple:
         return self._cuts
 
-    @cuts.setter
-    def cuts(self, value: tuple) -> None:
-        if isinstance(value, str):
-            if value not in self.autocut_options:
-                raise ValueError(f"Cut option {value} is not valid. Must be one of {self.autocut_options}.")
-            # A real viewer would calculate the cuts based on the data
-            self._cuts = (0, 1)
-            return
-
-        if len(value) != 2:
-            raise ValueError("Cuts must have length 2.")
-        self._cuts = value
+    def set_cuts(self, value: tuple[float, float] | BaseInterval) -> None:
+        if isinstance(value, tuple) and len(value) == 2:
+            self._cuts = ManualInterval(value[0], value[1])
+        elif isinstance(value, BaseInterval):
+            self._cuts = value
+        else:
+            raise ValueError("Cuts must be an Astropy.visualization Interval object or a tuple of two values.")
 
     @property
     def cursor(self) -> str:
