@@ -89,7 +89,7 @@ class ImageViewer:
     # The methods, grouped loosely by purpose
 
     # Methods for loading data
-    def load(self, file: str | os.PathLike | ArrayLike | NDData) -> None:
+    def load_image(self, file: str | os.PathLike | ArrayLike | NDData) -> None:
         """
         Load a FITS file into the viewer.
 

@@ -90,7 +90,7 @@ class ImageWidgetAPITest:
             case "array":
                 load_arg = data
 
-        self.image.load(load_arg)
+        self.image.load_image(load_arg)
 
     def test_center_on(self):
         self.image.center_on((10, 10))  # X, Y
@@ -103,7 +103,7 @@ class ImageWidgetAPITest:
         # an NDData that has a WCS.
         ndd = NDData(data=data, wcs=wcs)
         # TODO: THIS WOULD FAIL ON A VIEWER THAT DOES NOT ALLOW NDDATA OR ARRAY LOADING
-        self.image.load(ndd)
+        self.image.load_image(ndd)
 
         self.image.offset_by(10 * u.arcmin, 10 * u.arcmin)
 
@@ -118,7 +118,7 @@ class ImageWidgetAPITest:
     def test_zoom_level(self, data):
         # Set data first, since that is needed to determine zoom level
         # TODO: THIS WOULD FAIL ON A VIEWER THAT DOES NOT ALLOW NDDATA OR ARRAY LOADING
-        self.image.load(data)
+        self.image.load_image(data)
         self.image.zoom_level = 5
         assert self.image.zoom_level == 5
 
@@ -253,7 +253,7 @@ class ImageWidgetAPITest:
     def test_adding_markers_as_world(self, data, wcs):
         ndd = NDData(data=data, wcs=wcs)
         # TODO: THIS WOULD FAIL ON A VIEWER THAT DOES NOT ALLOW NDDATA OR ARRAY LOADING
-        self.image.load(ndd)
+        self.image.load_image(ndd)
 
         # Add markers using world coordinates
         pixels = np.linspace(0, 100, num=10).reshape(5, 2)
@@ -300,7 +300,7 @@ class ImageWidgetAPITest:
 
         # Setting using histogram requires data
         # TODO: THIS WOULD FAIL ON A VIEWER THAT DOES NOT ALLOW NDDATA OR ARRAY LOADING
-        self.image.load(data)
+        self.image.load_image(data)
         self.image.cuts = 'histogram'
         assert len(self.image.cuts) == 2
 

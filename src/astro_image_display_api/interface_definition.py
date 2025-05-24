@@ -49,9 +49,9 @@ class ImageViewerInterface(Protocol):
 
     # The methods, grouped loosely by purpose
 
-    # Method for loading data
+    # Method for loading image data
     @abstractmethod
-    def load(self, data: Any) -> None:
+    def load_image(self, data: Any) -> None:
         """
         Load data into the viewer. At a minimum, this should allow a FITS file
         to be loaded. Viewers may allow additional data types to be loaded, such as
