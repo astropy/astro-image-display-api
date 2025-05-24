@@ -33,9 +33,6 @@ class ImageViewerInterface(Protocol):
     zoom_level: float
     cursor: str
     marker: Any
-    cuts: tuple | BaseInterval
-    stretch: BaseStretch
-    # viewer: Any
 
     # Allowed locations for cursor display
     ALLOWED_CURSOR_LOCATIONS: tuple = ALLOWED_CURSOR_LOCATIONS
@@ -61,6 +58,58 @@ class ImageViewerInterface(Protocol):
         data : Any
             The data to load. This can be a FITS file, a 2D array,
             or an `astropy.nddata.NDData` object.
+        """
+        raise NotImplementedError
+
+    # Setting and getting image properties
+    @abstractmethod
+    def set_cuts(self, cuts: tuple | BaseInterval) -> None:
+        """
+        Set the cuts for the image.
+
+        Parameters
+        ----------
+        cuts : tuple or any Interval from `astropy.visualization`
+            The cuts to set. If a tuple, it should be of the form
+            ``(min, max)`` and will be interpreted as a
+            `~astropy.visualization.ManualInterval`.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_cuts(self) -> BaseInterval:
+        """
+        Get the current cuts for the image.
+
+        Returns
+        -------
+        cuts : `~astropy.visualization.BaseInterval`
+            The Astropy interval object representing the current cuts.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_stretch(self, stretch: BaseStretch) -> None:
+        """
+        Set the stretch for the image.
+
+        Parameters
+        ----------
+        stretch : Any stretch from `~astropy.visualization`
+            The stretch to set. This can be any subclass of
+            `~astropy.visualization.BaseStretch`.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_stretch(self) -> BaseStretch:
+        """
+        Get the current stretch for the image.
+
+        Returns
+        -------
+        stretch : `~astropy.visualization.BaseStretch`
+            The Astropy stretch object representing the current stretch.
         """
         raise NotImplementedError
 

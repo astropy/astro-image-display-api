@@ -269,34 +269,34 @@ class ImageWidgetAPITest:
                                    mark_coord_table['coord'].dec.deg)
 
     def test_stretch(self):
-        original_stretch = self.image.stretch
+        original_stretch = self.image.get_stretch()
 
         with pytest.raises(ValueError, match=r'Stretch.*not valid.*'):
-            self.image.stretch = 'not a valid value'
+            self.image.set_stretch('not a valid value')
 
         # A bad value should leave the stretch unchanged
-        assert self.image.stretch is original_stretch
+        assert self.image.get_stretch() is original_stretch
 
-        self.image.stretch = LogStretch()
+        self.image.set_stretch(LogStretch())
         # A valid value should change the stretch
-        assert self.image.stretch is not original_stretch
-        assert isinstance(self.image.stretch, LogStretch)
+        assert self.image.get_stretch() is not original_stretch
+        assert isinstance(self.image.get_stretch(), LogStretch)
 
     def test_cuts(self, data):
         with pytest.raises(ValueError, match='[mM]ust be'):
-            self.image.cuts = 'not a valid value'
+            self.image.set_cuts('not a valid value')
 
         with pytest.raises(ValueError, match='[mM]ust be'):
-            self.image.cuts = (1, 10, 100)
+            self.image.set_cuts((1, 10, 100))
 
         # Setting using histogram requires data
         self.image.load_image(data)
-        self.image.cuts = AsymmetricPercentileInterval(0.1, 99.9)
-        assert isinstance(self.image.cuts, AsymmetricPercentileInterval)
+        self.image.set_cuts(AsymmetricPercentileInterval(0.1, 99.9))
+        assert isinstance(self.image.get_cuts(), AsymmetricPercentileInterval)
 
-        self.image.cuts = (10, 100)
-        assert isinstance(self.image.cuts, ManualInterval)
-        assert self.image.cuts.get_limits(data) == (10, 100)
+        self.image.set_cuts((10, 100))
+        assert isinstance(self.image.get_cuts(), ManualInterval)
+        assert self.image.get_cuts().get_limits(data) == (10, 100)
 
     @pytest.mark.skip(reason="Not clear whether colormap is part of the API")
     def test_colormap(self):
