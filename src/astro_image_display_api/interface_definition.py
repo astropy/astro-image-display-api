@@ -122,9 +122,10 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def add_markers(self, table: Table, x_colname: str = 'x', y_colname: str = 'y',
+    def load_catalog(self, table: Table, x_colname: str = 'x', y_colname: str = 'y',
                     skycoord_colname: str = 'coord', use_skycoord: bool = False,
-                    marker_name: str | None = None) -> None:
+                    catalog_label: str | None = None,
+                    catalog_style: str | None = None) -> None:
         """
         Add markers to the image.
 
@@ -145,9 +146,13 @@ class ImageViewerInterface(Protocol):
         use_skycoord : bool, optional
             If `True`, the ``skycoord_colname`` column will be used to
             get the marker positions. Default is `False`.
-        marker_name : str, optional
+        catalog_label : str, optional
             The name of the marker set to use. If not given, a unique
             name will be generated.
+        catalog_style: str, optional
+            A dictionary that specifies the style of the markers used to
+            rerpresent the catalog. See `ImageViewerInterface.set_catalog_style`
+            for details.
         """
         raise NotImplementedError
 
@@ -204,29 +209,22 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def reset_markers(self) -> None:
-        """
-        Remove all markers from the image.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def remove_markers(self, marker_name: str | list[str] | None = None) -> None:
+    def remove_catalog(self, catalog_label: str | list[str] | None = None) -> None:
         """
         Remove markers from the image.
 
         Parameters
         ----------
-        marker_name : str, optional
+        catalog_label : str, optional
             The name of the marker set to remove. If the value is ``"all"``,
             then all markers will be removed.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def get_markers(self, x_colname: str = 'x', y_colname: str = 'y',
+    def get_catalog(self, x_colname: str = 'x', y_colname: str = 'y',
                     skycoord_colname: str = 'coord',
-                    marker_name: str | list[str] | None = None) -> Table:
+                    catalog_label: str | list[str] | None = None) -> Table:
         """
         Get the marker positions.
 
@@ -241,7 +239,7 @@ class ImageViewerInterface(Protocol):
         skycoord_colname : str, optional
             The name of the column containing the sky coordinates. Default
             is ``'coord'``.
-        marker_name : str or list of str, optional
+        catalog_label : str or list of str, optional
             The name of the marker set to use. If that value is ``"all"``,
             then all markers will be returned.
 
@@ -249,7 +247,19 @@ class ImageViewerInterface(Protocol):
         -------
         table : `astropy.table.Table`
             The table containing the marker positions. If no markers match the
-            ``marker_name`` parameter, an empty table is returned.
+            ``catalog_label`` parameter, an empty table is returned.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_catalog_names(self) -> list[str]:
+        """
+        Get the names of the loaded catalogs.
+
+        Returns
+        -------
+        list of str
+            The names of the loaded catalogs.
         """
         raise NotImplementedError
 

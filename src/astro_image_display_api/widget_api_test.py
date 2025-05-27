@@ -48,18 +48,14 @@ class ImageWidgetAPITest:
         """
         self.image = self.image_widget_class(image_width=250, image_height=100)
 
-    def _assert_empty_marker_table(self, table):
+    def _assert_empty_catalog_table(self, table):
         assert isinstance(table, Table)
         assert len(table) == 0
         assert sorted(table.colnames) == sorted(['x', 'y', 'coord', 'marker name'])
 
-    def _get_marker_names_as_set(self):
-        marks = self.image.get_markers(marker_name="all")["marker name"]
-        if hasattr(marks, 'mask') and all(marks.mask):
-            marker_names = set()
-        else:
-            marker_names = set(marks)
-        return marker_names
+    def _get_catalog_names_as_set(self):
+        marks = self.image.get_catalog_names()
+        return set(marks)
 
     def test_width_height(self):
         assert self.image.image_width == 250
@@ -162,12 +158,12 @@ class ImageWidgetAPITest:
         with pytest.raises(ValueError, match='Multiple catalog styles'):
             self.image.get_catalog_style()
 
-    def test_add_markers(self):
+    def test_load_catalog(self):
         data = np.arange(10).reshape(5, 2)
         orig_tab = Table(data=data, names=['x', 'y'], dtype=('float', 'float'))
         tab = Table(data=data, names=['x', 'y'], dtype=('float', 'float'))
-        self.image.add_markers(tab, x_colname='x', y_colname='y',
-                               skycoord_colname='coord', marker_name='test1')
+        self.image.load_catalog(tab, x_colname='x', y_colname='y',
+                               skycoord_colname='coord', catalog_label='test1')
 
 
         # Regression test for GitHub Issue 45:
@@ -175,98 +171,78 @@ class ImageWidgetAPITest:
         assert (tab == orig_tab).all()
 
         # Add more markers under different name.
-        self.image.add_markers(tab, x_colname='x', y_colname='y',
-                               skycoord_colname='coord', marker_name='test2')
+        self.image.load_catalog(tab, x_colname='x', y_colname='y',
+                               skycoord_colname='coord', catalog_label='test2')
 
-        marknames = self._get_marker_names_as_set()
+        marknames = self._get_catalog_names_as_set()
         assert marknames == set(['test1', 'test2'])
-        # assert self.image.get_marker_names() == ['test1', 'test2']
 
         # No guarantee markers will come back in the same order, so sort them.
-        t1 = self.image.get_markers(marker_name='test1')
+        t1 = self.image.get_catalog(catalog_label='test1')
         # Sort before comparing
         t1.sort('x')
         tab.sort('x')
         assert np.all(t1['x'] == tab['x'])
         assert (t1['y'] == tab['y']).all()
 
-        # That should have given us two copies of the input table
-        t2 = self.image.get_markers(marker_name="all")
-        expected = vstack([tab, tab], join_type='exact')
+        t2 = self.image.get_catalog(catalog_label="test2")
         # Sort before comparing
         t2.sort(['x', 'y'])
-        expected.sort(['x', 'y'])
-        assert (t2['x'] == expected['x']).all()
-        assert (t2['y'] == expected['y']).all()
+        tab.sort(['x', 'y'])
+        assert (t2['x'] == tab['x']).all()
+        assert (t2['y'] == tab['y']).all()
 
-        self.image.remove_markers(marker_name='test1')
-        marknames = self._get_marker_names_as_set()
+        self.image.remove_catalog(catalog_label='test1')
+        marknames = self._get_catalog_names_as_set()
         assert marknames == set(['test2'])
 
         # Add markers with no marker name and check we can retrieve them
         # using the default marker name
-        self.image.add_markers(tab, x_colname='x', y_colname='y',
+        self.image.load_catalog(tab, x_colname='x', y_colname='y',
                                skycoord_colname='coord')
         # Don't care about the order of the marker names so use set instead of
         # list.
-        marknames = self._get_marker_names_as_set()
+        marknames = self._get_catalog_names_as_set()
         assert (set(marknames) == set(['test2']))
 
         # Clear markers to not pollute other tests.
-        self.image.reset_markers()
-        marknames = self._get_marker_names_as_set()
+        self.image.remove_catalog(catalog_label='*')
+        marknames = self._get_catalog_names_as_set()
         assert len(marknames) == 0
-        self._assert_empty_marker_table(self.image.get_markers(marker_name="all"))
+        self._assert_empty_catalog_table(self.image.get_catalog())
         # Check that no markers remain after clearing
-        tab = self.image.get_markers()
-        self._assert_empty_marker_table(tab)
+        tab = self.image.get_catalog()
+        self._assert_empty_catalog_table(tab)
 
         # Check that retrieving a marker set that doesn't exist returns
         # an empty table with the right columns
-        tab = self.image.get_markers(marker_name='test1')
-        self._assert_empty_marker_table(tab)
+        tab = self.image.get_catalog(catalog_label='test1')
+        self._assert_empty_catalog_table(tab)
 
-    def test_get_markers_accepts_list_of_names(self):
-        # Check that the get_markers method accepts a list of marker names
-        # and returns a table with all the markers from all the named sets.
-        data = np.arange(10).reshape((5, 2))
-        tab = Table(data=data, names=['x', 'y'])
-        self.image.add_markers(tab, marker_name='test1')
-        self.image.add_markers(tab, marker_name='test2')
-
-        # No guarantee markers will come back in the same order, so sort them.
-        t1 = self.image.get_markers(marker_name=['test1', 'test2'])
-        # Sort before comparing
-        t1.sort('x')
-        expected = vstack([tab, tab], join_type='exact')
-        expected.sort('x')
-        np.testing.assert_array_equal(t1['x'], expected['x'])
-        np.testing.assert_array_equal(t1['y'], expected['y'])
-
-    def test_remove_markers(self):
+    def test_remove_catalog(self):
         with pytest.raises(ValueError, match='arf'):
-            self.image.remove_markers(marker_name='arf')
+            self.image.remove_catalog(catalog_label='arf')
 
-    def test_remove_markers_name_all(self):
+    def test_remove_catalogs_name_all(self):
         data = np.arange(10).reshape(5, 2)
         tab = Table(data=data, names=['x', 'y'])
-        self.image.add_markers(tab, marker_name='test1')
-        self.image.add_markers(tab, marker_name='test2')
+        self.image.load_catalog(tab, catalog_label='test1')
+        self.image.load_catalog(tab, catalog_label='test2')
 
-        self.image.remove_markers(marker_name='all')
-        self._assert_empty_marker_table(self.image.get_markers(marker_name='all'))
+        self.image.remove_catalog(catalog_label='*')
+        self._assert_empty_catalog_table(self.image.get_catalog())
 
-    def test_remove_marker_accepts_list(self):
+    def test_remove_catalog_accepts_list(self):
         data = np.arange(10).reshape(5, 2)
         tab = Table(data=data, names=['x', 'y'])
-        self.image.add_markers(tab, marker_name='test1')
-        self.image.add_markers(tab, marker_name='test2')
+        self.image.load_catalog(tab, catalog_label='test1')
+        self.image.load_catalog(tab, catalog_label='test2')
 
-        self.image.remove_markers(marker_name=['test1', 'test2'])
-        marks = self.image.get_markers(marker_name='all')
-        self._assert_empty_marker_table(marks)
+        self.image.remove_catalog(catalog_label=['test1', 'test2'])
+        marks = self.image.get_catalog()
+        self._assert_empty_catalog_table(marks)
 
-    def test_adding_markers_as_world(self, data, wcs):
+    def test_adding_catalog_as_world(self, data, wcs):
         ndd = NDData(data=data, wcs=wcs)
         self.image.load_image(ndd)
 
@@ -275,8 +251,8 @@ class ImageWidgetAPITest:
         marks_pix = Table(data=pixels, names=['x', 'y'], dtype=('float', 'float'))
         marks_coords = wcs.pixel_to_world(marks_pix['x'], marks_pix['y'])
         mark_coord_table = Table(data=[marks_coords], names=['coord'])
-        self.image.add_markers(mark_coord_table, use_skycoord=True)
-        result = self.image.get_markers()
+        self.image.load_catalog(mark_coord_table, use_skycoord=True)
+        result = self.image.get_catalog()
         # Check the x, y positions as long as we are testing things...
         # The first test had one entry that was zero, so any check
         # based on rtol will not work. Added a small atol to make sure
