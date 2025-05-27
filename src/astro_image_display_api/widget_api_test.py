@@ -61,10 +61,6 @@ class ImageWidgetAPITest:
             marker_names = set(marks)
         return marker_names
 
-    def test_default_marker_names(self):
-        # Check only that default names are set to a non-empty string
-        assert self.image.DEFAULT_MARKER_NAME
-
     def test_width_height(self):
         assert self.image.image_width == 250
         assert self.image.image_height == 100
@@ -134,15 +130,12 @@ class ImageWidgetAPITest:
             assert key in m_str
 
     def test_add_markers(self):
-        original_marker_name = self.image.DEFAULT_MARKER_NAME
         data = np.arange(10).reshape(5, 2)
         orig_tab = Table(data=data, names=['x', 'y'], dtype=('float', 'float'))
         tab = Table(data=data, names=['x', 'y'], dtype=('float', 'float'))
         self.image.add_markers(tab, x_colname='x', y_colname='y',
                                skycoord_colname='coord', marker_name='test1')
 
-        # Make sure setting didn't change the default name
-        assert self.image.DEFAULT_MARKER_NAME == original_marker_name
 
         # Regression test for GitHub Issue 45:
         # Adding markers should not modify the input data table.
@@ -176,12 +169,6 @@ class ImageWidgetAPITest:
         self.image.remove_markers(marker_name='test1')
         marknames = self._get_marker_names_as_set()
         assert marknames == set(['test2'])
-        # assert self.image.get_marker_names() == ['test2']
-
-        # Ensure unable to mark with reserved name
-        for name in self.image.RESERVED_MARKER_SET_NAMES:
-            with pytest.raises(ValueError, match='not allowed'):
-                self.image.add_markers(tab, marker_name=name)
 
         # Add markers with no marker name and check we can retrieve them
         # using the default marker name
@@ -190,7 +177,7 @@ class ImageWidgetAPITest:
         # Don't care about the order of the marker names so use set instead of
         # list.
         marknames = self._get_marker_names_as_set()
-        assert (set(marknames) == set(['test2', self.image.DEFAULT_MARKER_NAME]))
+        assert (set(marknames) == set(['test2']))
 
         # Clear markers to not pollute other tests.
         self.image.reset_markers()
@@ -198,7 +185,7 @@ class ImageWidgetAPITest:
         assert len(marknames) == 0
         self._assert_empty_marker_table(self.image.get_markers(marker_name="all"))
         # Check that no markers remain after clearing
-        tab = self.image.get_markers(marker_name=self.image.DEFAULT_MARKER_NAME)
+        tab = self.image.get_markers()
         self._assert_empty_marker_table(tab)
 
         # Check that retrieving a marker set that doesn't exist returns

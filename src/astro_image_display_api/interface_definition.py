@@ -13,10 +13,6 @@ from numpy.typing import ArrayLike
 # Allowed locations for cursor display
 ALLOWED_CURSOR_LOCATIONS = ('top', 'bottom', None)
 
-DEFAULT_MARKER_NAME = 'default-marker-name'
-
-# List of marker names that are for internal use only
-RESERVED_MARKER_SET_NAMES = ('all',)
 
 __all__ = [
     'ImageViewerInterface',
@@ -36,12 +32,6 @@ class ImageViewerInterface(Protocol):
 
     # Allowed locations for cursor display
     ALLOWED_CURSOR_LOCATIONS: tuple = ALLOWED_CURSOR_LOCATIONS
-
-    # List of marker names that are for internal use only
-    RESERVED_MARKER_SET_NAMES: tuple = RESERVED_MARKER_SET_NAMES
-
-    # Default marker name for marking via API
-    DEFAULT_MARKER_NAME: str = DEFAULT_MARKER_NAME
 
     # The methods, grouped loosely by purpose
 

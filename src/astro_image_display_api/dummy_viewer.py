@@ -35,12 +35,6 @@ class ImageViewer:
     # Allowed locations for cursor display
     ALLOWED_CURSOR_LOCATIONS: tuple = ImageViewerInterface.ALLOWED_CURSOR_LOCATIONS
 
-    # List of marker names that are for internal use only
-    RESERVED_MARKER_SET_NAMES: tuple = ImageViewerInterface.RESERVED_MARKER_SET_NAMES
-
-    # Default marker name for marking via API
-    DEFAULT_MARKER_NAME: str = ImageViewerInterface.DEFAULT_MARKER_NAME
-
     # some internal variable for keeping track of viewer state
     _interactive_marker_name: str = ""
     _previous_marker: Any = ""
@@ -219,11 +213,6 @@ class ImageViewer:
             if not coords and self._wcs is not None:
                 coords = self._wcs.pixel_to_world(x, y)
 
-        if marker_name in self.RESERVED_MARKER_SET_NAMES:
-            raise ValueError(f"Marker name {marker_name} not allowed.")
-
-        marker_name = marker_name if marker_name else self.DEFAULT_MARKER_NAME
-
         to_add = Table(
             dict(
                 x=x,
@@ -302,7 +291,7 @@ class ImageViewer:
             else:
                 marker_name = [marker_name]
         elif marker_name is None:
-            marker_name = [self.DEFAULT_MARKER_NAME]
+            marker_name = ["_default_marker"]
 
         to_stack = [self._markers[name] for name in marker_name if name in self._markers]
 
