@@ -149,6 +149,12 @@ class ImageViewer:
         self.zoom_level = 1.0
         self.center_on((self.image_width / 2, self.image_height / 2))
 
+    def _load_asdf(self, asdf_file: str | os.PathLike) -> None:
+        """
+        Not implementing some load types is fine.
+        """
+        raise NotImplementedError("ASDF loading is not implemented in this dummy viewer.")
+
     # Saving contents of the view and accessing the view
     def save(self, filename: str | os.PathLike, overwrite: bool = False) -> None:
         """
