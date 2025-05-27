@@ -121,13 +121,46 @@ class ImageWidgetAPITest:
         self.image.zoom(2)
         assert self.image.zoom_level == 6  # 3 x 2
 
-    def test_marker_properties(self):
-        # Set the marker style
-        marker_style = {'color': 'yellow', 'radius': 10, 'type': 'cross'}
-        self.image.marker = marker_style
-        m_str = str(self.image.marker)
-        for key in marker_style.keys():
-            assert key in m_str
+    def test_set_get_catalog_style_no_labels(self):
+        # Check that getting without setting returns a dict that contains
+        # the minimum required keys
+        required_style_keys = ['color', 'shape', 'size']
+        marker_style = self.image.get_catalog_style()
+        for key in required_style_keys:
+            assert key in marker_style
+
+        # Check that setting a marker style works
+        marker_settings = dict(color='red', marker='x', size=10)
+        self.image.set_catalog_style(**marker_settings)
+
+        retrieved_style = self.image.get_catalog_style()
+        # Check that the marker style is set correctly
+        for key, value in marker_settings.items():
+            assert retrieved_style[key] == value
+
+        # Check that set accepts the output of get
+        self.image.set_catalog_style(**retrieved_style)
+
+    def test_set_get_catalog_style_with_single_label(self):
+        # Check that when there is only a single catalog label it is
+        # not necessary to provide the label on get.
+        set_style_input = dict(catalog_label='test1', color='blue',
+                                     shape='square', size=5)
+        self.image.set_catalog_style(**set_style_input)
+        retrieved_style = self.image.get_catalog_style()
+
+        assert set_style_input == retrieved_style
+
+    def test_get_catalog_style_with_multiple_labels_raises_error(self):
+        # Check that when there are multiple catalog labels, the
+        # get_catalog_style method raises an error if no label is given.
+        self.image.set_catalog_style(catalog_label='test1', color='blue',
+                                     shape='square', size=5)
+        self.image.set_catalog_style(catalog_label='test2', color='red',
+                                     shape='circle', size=10)
+
+        with pytest.raises(ValueError, match='Multiple catalog styles'):
+            self.image.get_catalog_style()
 
     def test_add_markers(self):
         data = np.arange(10).reshape(5, 2)

@@ -151,9 +151,57 @@ class ImageViewerInterface(Protocol):
         """
         raise NotImplementedError
 
-    # @abstractmethod
-    # def remove_all_markers(self):
-    #     raise NotImplementedError
+    @abstractmethod
+    def set_catalog_style(
+        self,
+        catalog_label: str | None = None,
+        shape: str = 'circle',
+        color: str = 'red',
+        size: float = 5.0,
+        **kwargs
+    ):
+        """
+        Set the style of the catalog markers.
+
+        Parameters
+        ----------
+        shape : str, optional
+            The shape of the markers. Default is ``'circle'``. The set of
+            supported shapes is listed below in the `Notes` section.
+        color : str, optional
+            The color of the markers. Default is ``'red'``. Permitted colors are
+            any CSS4 color name. CSS4 also permits hex RGB or RGBA colors.
+        size : float, optional
+            The size of the markers. Default is ``5.0``.
+
+        **kwargs
+            Additional keyword arguments to pass to the marker style.
+
+        Notes
+        -----
+        The following shapes are supported: "circle", "square", "crosshair", "plus",
+        "diamond".
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_catalog_style(self, catalog_label: str | None = None) -> dict:
+        """
+        Get the style of the catalog markers.
+
+        Returns
+        -------
+        dict
+            The style of the markers.
+
+        Raises
+        ------
+
+        ValueError
+            If there are multiple catalog styles set and the user has not
+            specified a `catalog_label` for which to get the style.
+        """
+        raise NotImplementedError
 
     @abstractmethod
     def reset_markers(self) -> None:
