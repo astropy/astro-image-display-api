@@ -36,11 +36,14 @@ class ImageViewer:
     ALLOWED_CURSOR_LOCATIONS: tuple = ImageViewerInterface.ALLOWED_CURSOR_LOCATIONS
 
     # some internal variable for keeping track of viewer state
-    _interactive_marker_name: str = ""
-    _previous_marker: Any = ""
-    _markers: dict[str, Table] = field(default_factory=dict)
     _wcs: WCS | None = None
     _center: tuple[float, float] = (0.0, 0.0)
+
+    def __post_init__(self):
+        # This is a dictionary of marker sets. The keys are the names of the
+        # marker sets, and the values are the tables containing the markers.
+        self._default_marker_style = dict(shape="circle", color="yellow", size=10)
+        self._markers[None] = self._default_marker_style.copy()
 
     def get_stretch(self) -> BaseStretch:
         return self._stretch
@@ -72,6 +75,74 @@ class ImageViewer:
         self._cursor = value
 
     # The methods, grouped loosely by purpose
+
+    def get_catalog_style(self, catalog_label=None) -> dict[str, dict[str, Any]]:
+        """
+        Get the style for the catalog.
+
+        Parameters
+        ----------
+        catalog_label : str, optional
+            The label of the catalog. Default is ``None``.
+
+        Returns
+        -------
+        dict
+            The style for the catalog.
+        """
+        user_keys = list(set(self._markers.keys()) - {None})
+        if catalog_label is None:
+            match len(user_keys):
+                case 0:
+                    # No user-defined styles, so return the default style
+                    catalog_label = None
+                case 1:
+                    # The user must have set a style, so return that instead of
+                    # the default style, which live in the key None.
+                    catalog_label = user_keys[0]
+                case _:
+                    raise ValueError(
+                        "Multiple catalog styles defined. Please specify a catalog_label to get the style."
+                    )
+
+        style = self._markers[catalog_label]
+        style["catalog_label"] = catalog_label
+        return style
+
+    def set_catalog_style(
+            self,
+            catalog_label: str | None = None,
+            shape: str = "",
+            color: str = "",
+            size: float = 0,
+            **kwargs
+    ) -> None:
+        """
+        Set the style for the catalog.
+
+        Parameters
+        ----------
+        catalog_label : str, optional
+            The label of the catalog.
+        shape : str, optional
+            The shape of the markers.
+        color : str, optional
+            The color of the markers.
+        size : float, optional
+            The size of the markers.
+        **kwargs
+            Additional keyword arguments to pass to the marker style.
+        """
+        shape = shape if shape else self._default_marker_style["shape"]
+        color = color if color else self._default_marker_style["color"]
+        size = size if size else self._default_marker_style["size"]
+
+        self._markers[catalog_label] = {
+            "shape": shape,
+            "color": color,
+            "size": size,
+            **kwargs,
+        }
 
     # Methods for loading data
     def load_image(self, file: str | os.PathLike | ArrayLike | NDData) -> None:
