@@ -277,30 +277,6 @@ class ImageViewer:
                     skycoord_colname: str = 'coord', use_skycoord: bool = True,
                     catalog_label: str | None = None,
                     catalog_style: dict | None = None) -> None:
-        """
-        Add markers to the image.
-
-        Parameters
-        ----------
-        table : `astropy.table.Table`
-            The table containing the marker positions.
-        x_colname : str, optional
-            The name of the column containing the x positions. Default
-            is ``'x'``.
-        y_colname : str, optional
-            The name of the column containing the y positions. Default
-            is ``'y'``.
-        skycoord_colname : str, optional
-            The name of the column containing the sky coordinates. If
-            given, the ``use_skycoord`` parameter is ignored. Default
-            is ``'coord'``.
-        use_skycoord : bool, optional
-            If `True`, the ``skycoord_colname`` column will be used to
-            get the marker positions.
-        catalog_label : str, optional
-            The name of the marker set to use. If not given, a unique
-            name will be generated.
-        """
         try:
             coords = table[skycoord_colname]
         except KeyError:
@@ -331,6 +307,7 @@ class ImageViewer:
                 to_add[skycoord_colname] = None
 
         catalog_label = self._resolve_catalog_label(catalog_label)
+
         if (
             catalog_label in self._catalogs
             and self._catalogs[catalog_label].data is not None
@@ -339,6 +316,13 @@ class ImageViewer:
             self._catalogs[catalog_label].data = vstack([old_table, to_add])
         else:
             self._catalogs[catalog_label].data = to_add
+
+        if catalog_style is None:
+            catalog_style = self._default_marker_style.copy()
+
+        self._catalogs[catalog_label].style = catalog_style
+
+    load_catalog.__doc__ = ImageViewerInterface.load_catalog.__doc__
 
     def remove_catalog(self, catalog_label: str | None = None) -> None:
         """
