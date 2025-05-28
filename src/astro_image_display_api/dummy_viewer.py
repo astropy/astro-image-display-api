@@ -1,4 +1,6 @@
 import os
+from collections import defaultdict
+from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -13,6 +15,13 @@ from numpy.typing import ArrayLike
 
 from .interface_definition import ImageViewerInterface
 
+@dataclass
+class CatalogInfo:
+    """
+    A named tuple to hold information about a catalog.
+    """
+    style: dict[str, Any] = field(default_factory=dict)
+    data: Table | None = None
 
 @dataclass
 class ImageViewer:
@@ -43,7 +52,39 @@ class ImageViewer:
         # This is a dictionary of marker sets. The keys are the names of the
         # marker sets, and the values are the tables containing the markers.
         self._default_marker_style = dict(shape="circle", color="yellow", size=10)
-        self._markers[None] = self._default_marker_style.copy()
+        self._catalogs = defaultdict(CatalogInfo)
+        self._catalogs[None].data = None
+        self._catalogs[None].style = self._default_marker_style.copy()
+
+    def _user_catalog_labels(self) -> list[str]:
+        """
+        Get the user-defined catalog labels.
+        """
+        return [label for label in self._catalogs if label is not None]
+
+    def _resolve_catalog_label(self, catalog_label: str | None) -> str:
+        """
+        Figure out the catalog label if the user did not specify one. This
+        is needed so that the user gets what they expect in the simple case
+        where there is only one catalog loaded. In that case the user may
+        or may not have actually specified a catalog label.
+        """
+        user_keys = self._user_catalog_labels()
+        if catalog_label is None:
+            match len(user_keys):
+                case 0:
+                    # No user-defined catalog labels, so return the default label.
+                    catalog_label = None
+                case 1:
+                    # The user must have loaded a catalog, so return that instead of
+                    # the default label, which live in the key None.
+                    catalog_label = user_keys[0]
+                case _:
+                    raise ValueError(
+                        "Multiple catalog styles defined. Please specify a catalog_label to get the style."
+                    )
+
+        return catalog_label
 
     def get_stretch(self) -> BaseStretch:
         return self._stretch
@@ -90,22 +131,9 @@ class ImageViewer:
         dict
             The style for the catalog.
         """
-        user_keys = list(set(self._markers.keys()) - {None})
-        if catalog_label is None:
-            match len(user_keys):
-                case 0:
-                    # No user-defined styles, so return the default style
-                    catalog_label = None
-                case 1:
-                    # The user must have set a style, so return that instead of
-                    # the default style, which live in the key None.
-                    catalog_label = user_keys[0]
-                case _:
-                    raise ValueError(
-                        "Multiple catalog styles defined. Please specify a catalog_label to get the style."
-                    )
+        catalog_label = self._resolve_catalog_label(catalog_label)
 
-        style = self._markers[catalog_label]
+        style = self._catalogs[catalog_label].style
         style["catalog_label"] = catalog_label
         return style
 
@@ -137,7 +165,12 @@ class ImageViewer:
         color = color if color else self._default_marker_style["color"]
         size = size if size else self._default_marker_style["size"]
 
-        self._markers[catalog_label] = {
+        catalog_label = self._resolve_catalog_label(catalog_label)
+
+        if self._catalogs[catalog_label].data is None:
+            raise ValueError("Must load a catalog before setting a catalog style.")
+
+        self._catalogs[catalog_label].style = {
             "shape": shape,
             "color": color,
             "size": size,
@@ -240,9 +273,10 @@ class ImageViewer:
         p.write_text("This is a dummy file. The viewer does not save anything.")
 
     # Marker-related methods
-    def add_markers(self, table: Table, x_colname: str = 'x', y_colname: str = 'y',
-                    skycoord_colname: str = 'coord', use_skycoord: bool = False,
-                    marker_name: str | None = None) -> None:
+    def load_catalog(self, table: Table, x_colname: str = 'x', y_colname: str = 'y',
+                    skycoord_colname: str = 'coord', use_skycoord: bool = True,
+                    catalog_label: str | None = None,
+                    catalog_style: dict | None = None) -> None:
         """
         Add markers to the image.
 
@@ -262,8 +296,8 @@ class ImageViewer:
             is ``'coord'``.
         use_skycoord : bool, optional
             If `True`, the ``skycoord_colname`` column will be used to
-            get the marker positions. Default is `False`.
-        marker_name : str, optional
+            get the marker positions.
+        catalog_label : str, optional
             The name of the marker set to use. If not given, a unique
             name will be generated.
         """
@@ -272,105 +306,86 @@ class ImageViewer:
         except KeyError:
             coords = None
 
-        if use_skycoord:
-            if self._wcs is not None:
+        try:
+            xy = (table[x_colname], table[y_colname])
+        except KeyError:
+            xy = None
+
+        to_add = deepcopy(table)
+        if xy is None:
+            if self._wcs is not None and coords is not None:
                 x, y = self._wcs.world_to_pixel(coords)
+                to_add[x_colname] = x
+                to_add[y_colname] = y
             else:
-                raise ValueError("WCS is not set. Cannot convert to pixel coordinates.")
+                to_add[x_colname] = to_add[y_colname] = None
+
+        if coords is None:
+            if use_skycoord and self._wcs is None:
+                raise ValueError("Cannot use sky coordinates without a SkyCoord column or WCS.")
+            elif xy is not None and self._wcs is not None:
+                # If we have xy coordinates, convert them to sky coordinates
+                coords = self._wcs.pixel_to_world(xy[0], xy[1])
+                to_add[skycoord_colname] = coords
+            else:
+                to_add[skycoord_colname] = None
+
+        catalog_label = self._resolve_catalog_label(catalog_label)
+        if (
+            catalog_label in self._catalogs
+            and self._catalogs[catalog_label].data is not None
+        ):
+            old_table = self._catalogs[catalog_label].data
+            self._catalogs[catalog_label].data = vstack([old_table, to_add])
         else:
-            x = table[x_colname]
-            y = table[y_colname]
+            self._catalogs[catalog_label].data = to_add
 
-            if not coords and self._wcs is not None:
-                coords = self._wcs.pixel_to_world(x, y)
-
-        to_add = Table(
-            dict(
-                x=x,
-                y=y,
-                coord=coords if coords else [None] * len(x),
-            )
-        )
-        to_add["marker name"] = marker_name
-
-        if marker_name in self._markers:
-            marker_table = self._markers[marker_name]
-            self._markers[marker_name] = vstack([marker_table, to_add])
-        else:
-            self._markers[marker_name] = to_add
-
-    def reset_markers(self) -> None:
-        """
-        Remove all markers from the image.
-        """
-        self._markers = {}
-
-    def remove_markers(self, marker_name: str | list[str] | None = None) -> None:
+    def remove_catalog(self, catalog_label: str | None = None) -> None:
         """
         Remove markers from the image.
 
         Parameters
         ----------
         marker_name : str, optional
-            The name of the marker set to remove. If the value is ``"all"``,
+            The name of the marker set to remove. If the value is ``"*"``,
             then all markers will be removed.
         """
-        if isinstance(marker_name, str):
-            if marker_name in self._markers:
-                del self._markers[marker_name]
-            elif marker_name == "all":
-                self._markers = {}
-            else:
-                raise ValueError(f"Marker name {marker_name} not found.")
-        elif isinstance(marker_name, list):
-            for name in marker_name:
-                if name in self._markers:
-                    del self._markers[name]
-                else:
-                    raise ValueError(f"Marker name {name} not found.")
+        if isinstance(catalog_label, list):
+            raise ValueError(
+                "Cannot remove multiple catalogs from a list. Please specify "
+                "a single catalog label or use '*' to remove all catalogs."
+            )
+        elif catalog_label == "*":
+            # If the user wants to remove all catalogs, we reset the
+            # catalogs dictionary to an empty one.
+            self._catalogs = defaultdict(CatalogInfo)
+            return
 
-    def get_markers(self, x_colname: str = 'x', y_colname: str = 'y',
+        # Special cases are done, so we can resolve the catalog label
+        catalog_label = self._resolve_catalog_label(catalog_label)
+
+        try:
+            del self._catalogs[catalog_label]
+        except KeyError:
+            raise ValueError(f"Marker name {catalog_label} not found.")
+
+    def get_catalog(self, x_colname: str = 'x', y_colname: str = 'y',
                     skycoord_colname: str = 'coord',
-                    marker_name: str | list[str] | None = None) -> Table:
-        """
-        Get the marker positions.
+                    catalog_label: str | None = None) -> Table:
+        # Dostring is copied from the interface definition, so it is not
+        # duplicated here.
+        catalog_label = self._resolve_catalog_label(catalog_label)
 
-        Parameters
-        ----------
-        x_colname : str, optional
-            The name of the column containing the x positions. Default
-            is ``'x'``.
-        y_colname : str, optional
-            The name of the column containing the y positions. Default
-            is ``'y'``.
-        skycoord_colname : str, optional
-            The name of the column containing the sky coordinates. Default
-            is ``'coord'``.
-        marker_name : str or list of str, optional
-            The name of the marker set to use. If that value is ``"all"``,
-            then all markers will be returned.
+        result = self._catalogs[catalog_label].data if catalog_label in self._catalogs else Table(names=["x", "y", "coord"])
 
-        Returns
-        -------
-        table : `astropy.table.Table`
-            The table containing the marker positions. If no markers match the
-            ``marker_name`` parameter, an empty table is returned.
-        """
-        if isinstance(marker_name, str):
-            if marker_name == "all":
-                marker_name = self._markers.keys()
-            else:
-                marker_name = [marker_name]
-        elif marker_name is None:
-            marker_name = ["_default_marker"]
-
-        to_stack = [self._markers[name] for name in marker_name if name in self._markers]
-
-        result = vstack(to_stack) if to_stack else Table(names=["x", "y", "coord", "marker name"])
         result.rename_columns(["x", "y", "coord"], [x_colname, y_colname, skycoord_colname])
 
         return result
+    get_catalog.__doc__ = ImageViewerInterface.get_catalog.__doc__
 
+    def get_catalog_names(self) -> list[str]:
+        return list(self._user_catalog_labels())
+    get_catalog_names.__doc__ = ImageViewerInterface.get_catalog_names.__doc__
 
     # Methods that modify the view
     def center_on(self, point: tuple | SkyCoord):

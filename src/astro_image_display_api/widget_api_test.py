@@ -1,14 +1,13 @@
 
 import pytest
 
-import numpy as np  # noqa: E402
+import numpy as np
 
-from astropy.coordinates import SkyCoord  # noqa: E402
-from astropy.io import fits  # noqa: E402
-from astropy.nddata import NDData  # noqa: E402
-from astropy.table import Table, vstack  # noqa: E402
-from astropy import units as u  # noqa: E402
-from astropy.wcs import WCS  # noqa: E402
+from astropy.io import fits
+from astropy.nddata import NDData
+from astropy.table import Table, vstack
+from astropy import units as u
+from astropy.wcs import WCS
 from astropy.visualization import AsymmetricPercentileInterval, LogStretch, ManualInterval
 
 __all__ = ['ImageWidgetAPITest']
@@ -37,6 +36,26 @@ class ImageWidgetAPITest:
         w.wcs.ctype = ["RA---AIR", "DEC--AIR"]
         w.wcs.set_pv([(2, 1, 45.0)])
         return w
+
+    @pytest.fixture
+    def catalog(self, setup: None, wcs: WCS) -> Table:
+        """
+        A catalog fixture that returns an empty table with the
+        expected columns.
+        """
+        rng = np.random.default_rng(45328975)
+        x = rng.uniform(0, self.image.image_width, size=10)
+        y = rng.uniform(0, self.image.image_height, size=10)
+        coord = wcs.pixel_to_world(x, y)
+
+        cat = Table(
+            dict(
+                x=x,
+                y=y,
+                coord=coord,
+            )
+        )
+        return cat
 
     # This setup is run before each test, ensuring that there are no
     # side effects of one test on another
@@ -117,14 +136,26 @@ class ImageWidgetAPITest:
         self.image.zoom(2)
         assert self.image.zoom_level == 6  # 3 x 2
 
-    def test_set_get_catalog_style_no_labels(self):
+    def test_set_catalog_style_before_catalog_data_raises_error(self):
+        # Make sure3 that adding a catalog style before adding any catalog
+        # data raises an error.
+        with pytest.raises(
+            ValueError,
+            match='Must load a catalog before setting a catalog style'
+        ):
+            self.image.set_catalog_style(color='red', marker='x', size=10)
+
+    def test_set_get_catalog_style_no_labels(self, catalog):
         # Check that getting without setting returns a dict that contains
         # the minimum required keys
+
         required_style_keys = ['color', 'shape', 'size']
         marker_style = self.image.get_catalog_style()
         for key in required_style_keys:
             assert key in marker_style
 
+        # Add some data before setting a style
+        self.image.load_catalog(catalog)
         # Check that setting a marker style works
         marker_settings = dict(color='red', marker='x', size=10)
         self.image.set_catalog_style(**marker_settings)
@@ -137,9 +168,10 @@ class ImageWidgetAPITest:
         # Check that set accepts the output of get
         self.image.set_catalog_style(**retrieved_style)
 
-    def test_set_get_catalog_style_with_single_label(self):
+    def test_set_get_catalog_style_with_single_label(self, catalog):
         # Check that when there is only a single catalog label it is
         # not necessary to provide the label on get.
+        self.image.load_catalog(catalog, catalog_label='test1')
         set_style_input = dict(catalog_label='test1', color='blue',
                                      shape='square', size=5)
         self.image.set_catalog_style(**set_style_input)
@@ -147,9 +179,11 @@ class ImageWidgetAPITest:
 
         assert set_style_input == retrieved_style
 
-    def test_get_catalog_style_with_multiple_labels_raises_error(self):
+    def test_get_catalog_style_with_multiple_labels_raises_error(self, catalog):
         # Check that when there are multiple catalog labels, the
         # get_catalog_style method raises an error if no label is given.
+        self.image.load_catalog(catalog, catalog_label='test1')
+        self.image.load_catalog(catalog, catalog_label='test2')
         self.image.set_catalog_style(catalog_label='test1', color='blue',
                                      shape='square', size=5)
         self.image.set_catalog_style(catalog_label='test2', color='red',
@@ -162,8 +196,14 @@ class ImageWidgetAPITest:
         data = np.arange(10).reshape(5, 2)
         orig_tab = Table(data=data, names=['x', 'y'], dtype=('float', 'float'))
         tab = Table(data=data, names=['x', 'y'], dtype=('float', 'float'))
-        self.image.load_catalog(tab, x_colname='x', y_colname='y',
-                               skycoord_colname='coord', catalog_label='test1')
+        self.image.load_catalog(
+            tab,
+            x_colname='x',
+            y_colname='y',
+            skycoord_colname='coord',
+            catalog_label='test1',
+            use_skycoord=False
+        )
 
 
         # Regression test for GitHub Issue 45:
@@ -171,8 +211,14 @@ class ImageWidgetAPITest:
         assert (tab == orig_tab).all()
 
         # Add more markers under different name.
-        self.image.load_catalog(tab, x_colname='x', y_colname='y',
-                               skycoord_colname='coord', catalog_label='test2')
+        self.image.load_catalog(
+            tab,
+            x_colname='x',
+            y_colname='y',
+            skycoord_colname='coord',
+            catalog_label='test2',
+            use_skycoord=False
+        )
 
         marknames = self._get_catalog_names_as_set()
         assert marknames == set(['test1', 'test2'])
@@ -198,8 +244,13 @@ class ImageWidgetAPITest:
 
         # Add markers with no marker name and check we can retrieve them
         # using the default marker name
-        self.image.load_catalog(tab, x_colname='x', y_colname='y',
-                               skycoord_colname='coord')
+        self.image.load_catalog(
+            tab,
+            x_colname='x',
+            y_colname='y',
+            skycoord_colname='coord',
+            use_skycoord=False
+        )
         # Don't care about the order of the marker names so use set instead of
         # list.
         marknames = self._get_catalog_names_as_set()
@@ -219,6 +270,17 @@ class ImageWidgetAPITest:
         tab = self.image.get_catalog(catalog_label='test1')
         self._assert_empty_catalog_table(tab)
 
+    def test_catalog_info_preserved_after_load(self, catalog):
+        # Make sure that any catalog columns in addition to the position data
+        # is preserved after loading a catalog.
+        # Add a column with some extra information
+        catalog['extra_info'] = np.arange(len(catalog))
+        self.image.load_catalog(catalog, catalog_label='test1')
+        # Retrieve the catalog and check that the extra column is there
+        retrieved_catalog = self.image.get_catalog(catalog_label='test1')
+        assert 'extra_info' in retrieved_catalog.colnames
+        assert (retrieved_catalog['extra_info'] == catalog['extra_info']).all()
+
     def test_remove_catalog(self):
         with pytest.raises(ValueError, match='arf'):
             self.image.remove_catalog(catalog_label='arf')
@@ -226,21 +288,23 @@ class ImageWidgetAPITest:
     def test_remove_catalogs_name_all(self):
         data = np.arange(10).reshape(5, 2)
         tab = Table(data=data, names=['x', 'y'])
-        self.image.load_catalog(tab, catalog_label='test1')
-        self.image.load_catalog(tab, catalog_label='test2')
+        self.image.load_catalog(tab, catalog_label='test1', use_skycoord=False)
+        self.image.load_catalog(tab, catalog_label='test2', use_skycoord=False)
 
         self.image.remove_catalog(catalog_label='*')
         self._assert_empty_catalog_table(self.image.get_catalog())
 
-    def test_remove_catalog_accepts_list(self):
+    def test_remove_catalog_does_not_accept_list(self):
         data = np.arange(10).reshape(5, 2)
         tab = Table(data=data, names=['x', 'y'])
-        self.image.load_catalog(tab, catalog_label='test1')
-        self.image.load_catalog(tab, catalog_label='test2')
+        self.image.load_catalog(tab, catalog_label='test1', use_skycoord=False)
+        self.image.load_catalog(tab, catalog_label='test2', use_skycoord=False)
 
-        self.image.remove_catalog(catalog_label=['test1', 'test2'])
-        marks = self.image.get_catalog()
-        self._assert_empty_catalog_table(marks)
+        with pytest.raises(
+            ValueError,
+            match='Cannot remove multiple catalogs from a list'
+        ):
+            self.image.remove_catalog(catalog_label=['test1', 'test2'])
 
     def test_adding_catalog_as_world(self, data, wcs):
         ndd = NDData(data=data, wcs=wcs)
