@@ -339,6 +339,27 @@ class ImageWidgetAPITest:
         assert 'extra_info' in retrieved_catalog.colnames
         assert (retrieved_catalog['extra_info'] == catalog['extra_info']).all()
 
+    def test_load_catalog_with_no_style_has_a_style(self, catalog):
+        # Check that loading a catalog without a style sets a default style
+        # for that catalog.
+        self.image.load_catalog(catalog, catalog_label='test1')
+
+        retrieved_style = self.image.get_catalog_style(catalog_label='test1')
+        assert isinstance(retrieved_style, dict)
+        assert 'color' in retrieved_style
+        assert 'shape' in retrieved_style
+        assert 'size' in retrieved_style
+
+    def test_load_catalog_with_style_sets_style(self, catalog):
+        # Check that loading a catalog with a style sets the style
+        # for that catalog.
+        style = dict(color='blue', marker='x', size=10)
+        self.image.load_catalog(catalog, catalog_label='test1',
+                                catalog_style=style)
+
+        retrieved_style = self.image.get_catalog_style(catalog_label='test1')
+        assert retrieved_style == style
+
     def test_remove_catalog(self):
         with pytest.raises(ValueError, match='arf'):
             self.image.remove_catalog(catalog_label='arf')
