@@ -70,7 +70,7 @@ class ImageWidgetAPITest:
     def _assert_empty_catalog_table(self, table):
         assert isinstance(table, Table)
         assert len(table) == 0
-        assert sorted(table.colnames) == sorted(['x', 'y', 'coord', 'marker name'])
+        assert sorted(table.colnames) == sorted(['x', 'y', 'coord'])
 
     def _get_catalog_names_as_set(self):
         marks = self.image.get_catalog_names()
@@ -192,83 +192,97 @@ class ImageWidgetAPITest:
         with pytest.raises(ValueError, match='Multiple catalog styles'):
             self.image.get_catalog_style()
 
-    def test_load_catalog(self):
-        data = np.arange(10).reshape(5, 2)
-        orig_tab = Table(data=data, names=['x', 'y'], dtype=('float', 'float'))
-        tab = Table(data=data, names=['x', 'y'], dtype=('float', 'float'))
+    @pytest.mark.parametrize("catalog_label", ['test1', None])
+    def test_load_get_single_catalog_with_without_label(self, catalog, catalog_label):
+        # Make sure we can get a single catalog with or without a label.
         self.image.load_catalog(
-            tab,
+            catalog,
             x_colname='x',
             y_colname='y',
             skycoord_colname='coord',
+            catalog_label=catalog_label,
+            use_skycoord=False
+        )
+
+        # Get the catalog without a label
+        retrieved_catalog = self.image.get_catalog()
+        assert (retrieved_catalog == catalog).all()
+
+        # Get the catalog with a label if there is one
+        if catalog_label is not None:
+            retrieved_catalog = self.image.get_catalog(catalog_label=catalog_label)
+            assert (retrieved_catalog == catalog).all()
+
+    def test_load_catalog_does_not_modify_input_catalog(self, catalog, data):
+        # Adding a catalog should not modify the input data table.
+        orig_tab = catalog.copy()
+        self.image.load_catalog(catalog)
+        _ = self.image.get_catalog()
+        assert (catalog == orig_tab).all()
+
+    def test_load_multiple_catalogs(self, catalog):
+        # Load and get mulitple catalogs
+        # Add a catalog
+        self.image.load_catalog(
+            catalog,
+            x_colname='x',
+            y_colname='y',
             catalog_label='test1',
-            use_skycoord=False
         )
-
-
-        # Regression test for GitHub Issue 45:
-        # Adding markers should not modify the input data table.
-        assert (tab == orig_tab).all()
-
-        # Add more markers under different name.
+        # Add the catalog again under different name.
         self.image.load_catalog(
-            tab,
+            catalog,
             x_colname='x',
             y_colname='y',
-            skycoord_colname='coord',
             catalog_label='test2',
-            use_skycoord=False
         )
 
-        marknames = self._get_catalog_names_as_set()
-        assert marknames == set(['test1', 'test2'])
+        assert sorted(self.image.get_catalog_names()) == ['test1', 'test2']
 
         # No guarantee markers will come back in the same order, so sort them.
         t1 = self.image.get_catalog(catalog_label='test1')
         # Sort before comparing
-        t1.sort('x')
-        tab.sort('x')
-        assert np.all(t1['x'] == tab['x'])
-        assert (t1['y'] == tab['y']).all()
+        t1.sort(['x', 'y'])
+        catalog.sort(['x', 'y'])
+        assert (t1['x'] == catalog['x']).all()
+        assert (t1['y'] == catalog['y']).all()
 
         t2 = self.image.get_catalog(catalog_label="test2")
         # Sort before comparing
         t2.sort(['x', 'y'])
-        tab.sort(['x', 'y'])
-        assert (t2['x'] == tab['x']).all()
-        assert (t2['y'] == tab['y']).all()
+        assert (t2['x'] == catalog['x']).all()
+        assert (t2['y'] == catalog['y']).all()
 
+        # get_catalog without a label should fail with multiple catalogs
+        with pytest.raises(ValueError, match="Multiple catalog styles defined."):
+            self.image.get_catalog()
+
+        # if we remove one of the catalogs we should be able to get the
+        # other one without a label.
         self.image.remove_catalog(catalog_label='test1')
-        marknames = self._get_catalog_names_as_set()
-        assert marknames == set(['test2'])
+        # Make sure test1 is really gone.
+        assert self.image.get_catalog_names() == ['test2']
 
-        # Add markers with no marker name and check we can retrieve them
-        # using the default marker name
-        self.image.load_catalog(
-            tab,
-            x_colname='x',
-            y_colname='y',
-            skycoord_colname='coord',
-            use_skycoord=False
-        )
-        # Don't care about the order of the marker names so use set instead of
-        # list.
-        marknames = self._get_catalog_names_as_set()
-        assert (set(marknames) == set(['test2']))
-
-        # Clear markers to not pollute other tests.
-        self.image.remove_catalog(catalog_label='*')
-        marknames = self._get_catalog_names_as_set()
-        assert len(marknames) == 0
-        self._assert_empty_catalog_table(self.image.get_catalog())
-        # Check that no markers remain after clearing
-        tab = self.image.get_catalog()
-        self._assert_empty_catalog_table(tab)
+        # Get without a catalog
+        t2 = self.image.get_catalog()
+        # Sort before comparing
+        t2.sort(['x', 'y'])
+        assert (t2['x'] == catalog['x']).all()
+        assert (t2['y'] == catalog['y']).all()
 
         # Check that retrieving a marker set that doesn't exist returns
         # an empty table with the right columns
         tab = self.image.get_catalog(catalog_label='test1')
         self._assert_empty_catalog_table(tab)
+
+    def test_load_catalog_multiple_same_label(self, catalog):
+        # Check that loading a catalog with the same label multiple times
+        # does not raise an error and does not change the catalog.
+        self.image.load_catalog(catalog, catalog_label='test1')
+        self.image.load_catalog(catalog, catalog_label='test1')
+
+        retrieved_catalog = self.image.get_catalog(catalog_label='test1')
+        assert len(retrieved_catalog) == 2 * len(catalog)
 
     def test_load_catalog_with_skycoord_no_wcs(self, catalog, data):
         # Check that loading a catalog with skycoord but no x/y and
