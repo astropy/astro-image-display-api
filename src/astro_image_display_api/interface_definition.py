@@ -125,9 +125,9 @@ class ImageViewerInterface(Protocol):
     def load_catalog(self, table: Table, x_colname: str = 'x', y_colname: str = 'y',
                     skycoord_colname: str = 'coord', use_skycoord: bool = False,
                     catalog_label: str | None = None,
-                    catalog_style: str | None = None) -> None:
+                    catalog_style: dict | None = None) -> None:
         """
-        Add markers to the image.
+        Add markers to the viewer at positions given by a catalog.
 
         Parameters
         ----------
@@ -149,7 +149,7 @@ class ImageViewerInterface(Protocol):
         catalog_label : str, optional
             The name of the marker set to use. If not given, a unique
             name will be generated.
-        catalog_style: str, optional
+        catalog_style: dict, optional
             A dictionary that specifies the style of the markers used to
             rerpresent the catalog. See `ImageViewerInterface.set_catalog_style`
             for details.
