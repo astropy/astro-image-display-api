@@ -270,6 +270,50 @@ class ImageWidgetAPITest:
         tab = self.image.get_catalog(catalog_label='test1')
         self._assert_empty_catalog_table(tab)
 
+    def test_load_catalog_with_skycoord_no_wcs(self, catalog, data):
+        # Check that loading a catalog with skycoord but no x/y and
+        # no WCS returns a catlog with None for x and y.
+        self.image.load_array(data)
+
+        # Remove x/y columns from the catalog
+        del catalog['x', 'y']
+        self.image.load_catalog(catalog)
+        # Retrieve the catalog and check that the x and y columns are None
+        retrieved_catalog = self.image.get_catalog()
+        assert 'x' in retrieved_catalog.colnames
+        assert 'y' in retrieved_catalog.colnames
+        assert all(rc is None for rc in retrieved_catalog['x'])
+        assert all(rc is None for rc in retrieved_catalog['y'])
+
+    def test_load_catalog_with_use_skycoord_no_skycoord_no_wcs(self, catalog, data):
+        # Check that loading a catalog with use_skycoord=True but no
+        # skycoord column and no WCS raises an error.
+        self.image.load_array(data)
+        del catalog['coord']  # Remove the skycoord column
+        with pytest.raises(ValueError, match='Cannot use sky coordinates without'):
+            self.image.load_catalog(catalog, use_skycoord=True)
+
+    def test_load_catalog_with_xy_and_wcs(self, catalog, data, wcs):
+        # Check that loading a catalog that wants to use sky coordinates,
+        # has no coordinate column but has x/y and a WCS works.
+        self.image.load_nddata(NDData(data=data, wcs=wcs))
+
+        # Remove the skycoord column from the catalog
+        del catalog['coord']
+
+        # Add the catalog with x/y and WCS
+        self.image.load_catalog(catalog, use_skycoord=True)
+
+        # Retrieve the catalog and check that the x and y columns are there
+        retrieved_catalog = self.image.get_catalog()
+        assert 'x' in retrieved_catalog.colnames
+        assert 'y' in retrieved_catalog.colnames
+        assert 'coord' in retrieved_catalog.colnames
+
+        # Check that the coordinates are correct
+        coords = wcs.pixel_to_world(catalog['x'], catalog['y'])
+        assert all(coords.separation(retrieved_catalog['coord']) < 1e-9 * u.deg)
+
     def test_catalog_info_preserved_after_load(self, catalog):
         # Make sure that any catalog columns in addition to the position data
         # is preserved after loading a catalog.
