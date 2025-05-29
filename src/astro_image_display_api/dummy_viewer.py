@@ -171,20 +171,17 @@ class ImageViewer:
         **kwargs
             Additional keyword arguments to pass to the marker style.
         """
-        shape = shape
-        color = color
-        size = size
-
         catalog_label = self._resolve_catalog_label(catalog_label)
 
         if self._catalogs[catalog_label].data is None:
             raise ValueError("Must load a catalog before setting a catalog style.")
 
-        self._catalogs[catalog_label].style = {
-            "shape": shape,
-            "color": color,
-            "size": size,
-        }
+        self._catalogs[catalog_label].style = dict(
+            shape=shape,
+            color=color,
+            size=size,
+            **kwargs
+        )
 
     # Methods for loading data
     def load_image(self, file: str | os.PathLike | ArrayLike | NDData) -> None:

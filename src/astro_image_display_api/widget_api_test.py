@@ -192,14 +192,14 @@ class ImageWidgetAPITest:
         with pytest.raises(ValueError, match='Multiple catalog styles'):
             self.image.get_catalog_style()
 
-    def set_get_caralog_style_preserves_extra_keywords(self, catalog):
+    def test_set_get_catalog_style_preserves_extra_keywords(self, catalog):
         # Check that setting a catalog style with extra keywords preserves
         # those keywords.
         self.image.load_catalog(catalog)
         # The only required keywords are color, shape, and size.
         # Add some extra keyword to the style.
         style = dict(color='blue', shape='x', size=10, extra_kw='extra_value', alpha=0.5)
-        self.image.set_catalog_style(**style)
+        self.image.set_catalog_style(**style.copy())
 
         retrieved_style = self.image.get_catalog_style()
         del retrieved_style['catalog_label']  # Remove the label
