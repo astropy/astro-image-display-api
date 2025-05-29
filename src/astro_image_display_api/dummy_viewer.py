@@ -89,7 +89,7 @@ class ImageViewer:
     # The methods, grouped loosely by purpose
 
     # Methods for loading data
-    def load_fits(self, file: str | os.PathLike) -> None:
+    def load_image(self, file: str | os.PathLike | ArrayLike | NDData) -> None:
         """
         Load a FITS file into the viewer.
 
@@ -99,6 +99,22 @@ class ImageViewer:
             The FITS file to load. If a string, it can be a URL or a
             file path.
         """
+        if isinstance(file, (str, os.PathLike)):
+            if isinstance(file, str):
+                is_adsf = file.endswith(".asdf")
+            else:
+                is_asdf = file.suffix == ".asdf"
+            if is_asdf:
+                self._load_asdf(file)
+            else:
+                self._load_fits(file)
+        elif isinstance(file, NDData):
+            self._load_nddata(file)
+        else:
+            # Assume it is a 2D array
+            self._load_array(file)
+
+    def _load_fits(self, file: str | os.PathLike) -> None:
         ccd = CCDData.read(file)
         self._wcs = ccd.wcs
         self.image_height, self.image_width = ccd.shape
@@ -107,7 +123,7 @@ class ImageViewer:
         self.zoom_level = 1.0
         self.center_on((self.image_width / 2, self.image_height / 2))
 
-    def load_array(self, array: ArrayLike) -> None:
+    def _load_array(self, array: ArrayLike) -> None:
         """
         Load a 2D array into the viewer.
 
@@ -123,7 +139,7 @@ class ImageViewer:
         self.center_on((self.image_width / 2, self.image_height / 2))
 
 
-    def load_nddata(self, data: NDData) -> None:
+    def _load_nddata(self, data: NDData) -> None:
         """
         Load an `astropy.nddata.NDData` object into the viewer.
 
@@ -139,6 +155,12 @@ class ImageViewer:
         # of image size to viewer size.
         self.zoom_level = 1.0
         self.center_on((self.image_width / 2, self.image_height / 2))
+
+    def _load_asdf(self, asdf_file: str | os.PathLike) -> None:
+        """
+        Not implementing some load types is fine.
+        """
+        raise NotImplementedError("ASDF loading is not implemented in this dummy viewer.")
 
     # Saving contents of the view and accessing the view
     def save(self, filename: str | os.PathLike, overwrite: bool = False) -> None:

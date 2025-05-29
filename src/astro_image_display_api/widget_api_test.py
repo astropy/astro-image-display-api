@@ -1,4 +1,3 @@
-# TODO: How to enable switching out backend and still run the same tests?
 
 import pytest
 
@@ -76,19 +75,21 @@ class ImageWidgetAPITest:
         assert self.image.image_width == width
         assert self.image.image_height == height
 
-    def test_load_fits(self, data, tmp_path):
-        hdu = fits.PrimaryHDU(data=data)
-        image_path = tmp_path / 'test.fits'
-        hdu.header["BUNIT"] = "adu"
-        hdu.writeto(image_path)
-        self.image.load_fits(image_path)
+    @pytest.mark.parametrize("load_type", ["fits", "nddata", "array"])
+    def test_load(self, data, tmp_path, load_type):
+        match load_type:
+            case "fits":
+                hdu = fits.PrimaryHDU(data=data)
+                image_path = tmp_path / 'test.fits'
+                hdu.header["BUNIT"] = "adu"
+                hdu.writeto(image_path)
+                load_arg = image_path
+            case "nddata":
+                load_arg = NDData(data=data)
+            case "array":
+                load_arg = data
 
-    def test_load_nddata(self, data):
-        nddata = NDData(data)
-        self.image.load_nddata(nddata)
-
-    def test_load_array(self, data):
-        self.image.load_array(data)
+        self.image.load_image(load_arg)
 
     def test_center_on(self):
         self.image.center_on((10, 10))  # X, Y
@@ -100,7 +101,7 @@ class ImageWidgetAPITest:
         # have) taken care of setting up the WCS internally if initialized with
         # an NDData that has a WCS.
         ndd = NDData(data=data, wcs=wcs)
-        self.image.load_nddata(ndd)
+        self.image.load_image(ndd)
 
         self.image.offset_by(10 * u.arcmin, 10 * u.arcmin)
 
@@ -114,7 +115,7 @@ class ImageWidgetAPITest:
 
     def test_zoom_level(self, data):
         # Set data first, since that is needed to determine zoom level
-        self.image.load_array(data)
+        self.image.load_image(data)
         self.image.zoom_level = 5
         assert self.image.zoom_level == 5
 
@@ -130,8 +131,6 @@ class ImageWidgetAPITest:
         m_str = str(self.image.marker)
         for key in marker_style.keys():
             assert key in m_str
-
-    # TODO: add test that checks that retrieving markers with an unknown name issues no error
 
     def test_add_markers(self):
         original_marker_name = self.image.DEFAULT_MARKER_NAME
@@ -248,7 +247,7 @@ class ImageWidgetAPITest:
 
     def test_adding_markers_as_world(self, data, wcs):
         ndd = NDData(data=data, wcs=wcs)
-        self.image.load_nddata(ndd)
+        self.image.load_image(ndd)
 
         # Add markers using world coordinates
         pixels = np.linspace(0, 100, num=10).reshape(5, 2)
@@ -294,7 +293,7 @@ class ImageWidgetAPITest:
         assert 'histogram' in self.image.autocut_options
 
         # Setting using histogram requires data
-        self.image.load_array(data)
+        self.image.load_image(data)
         self.image.cuts = 'histogram'
         assert len(self.image.cuts) == 2
 
