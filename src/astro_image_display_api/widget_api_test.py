@@ -143,7 +143,7 @@ class ImageWidgetAPITest:
             ValueError,
             match='Must load a catalog before setting a catalog style'
         ):
-            self.image.set_catalog_style(color='red', marker='x', size=10)
+            self.image.set_catalog_style(color='red', shape='x', size=10)
 
     def test_set_get_catalog_style_no_labels(self, catalog):
         # Check that getting without setting returns a dict that contains
@@ -157,7 +157,7 @@ class ImageWidgetAPITest:
         # Add some data before setting a style
         self.image.load_catalog(catalog)
         # Check that setting a marker style works
-        marker_settings = dict(color='red', marker='x', size=10)
+        marker_settings = dict(color='red', shape='x', size=10)
         self.image.set_catalog_style(**marker_settings)
 
         retrieved_style = self.image.get_catalog_style()
@@ -191,6 +191,19 @@ class ImageWidgetAPITest:
 
         with pytest.raises(ValueError, match='Multiple catalog styles'):
             self.image.get_catalog_style()
+
+    def set_get_caralog_style_preserves_extra_keywords(self, catalog):
+        # Check that setting a catalog style with extra keywords preserves
+        # those keywords.
+        self.image.load_catalog(catalog)
+        # The only required keywords are color, shape, and size.
+        # Add some extra keyword to the style.
+        style = dict(color='blue', shape='x', size=10, extra_kw='extra_value', alpha=0.5)
+        self.image.set_catalog_style(**style)
+
+        retrieved_style = self.image.get_catalog_style()
+        del retrieved_style['catalog_label']  # Remove the label
+        assert retrieved_style == style
 
     @pytest.mark.parametrize("catalog_label", ['test1', None])
     def test_load_get_single_catalog_with_without_label(self, catalog, catalog_label):
@@ -353,7 +366,7 @@ class ImageWidgetAPITest:
     def test_load_catalog_with_style_sets_style(self, catalog):
         # Check that loading a catalog with a style sets the style
         # for that catalog.
-        style = dict(color='blue', marker='x', size=10)
+        style = dict(color='blue', shape='x', size=10)
         self.image.load_catalog(catalog, catalog_label='test1',
                                 catalog_style=style)
 
