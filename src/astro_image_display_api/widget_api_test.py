@@ -137,7 +137,7 @@ class ImageWidgetAPITest:
         assert self.image.zoom_level == 6  # 3 x 2
 
     def test_set_catalog_style_before_catalog_data_raises_error(self):
-        # Make sure3 that adding a catalog style before adding any catalog
+        # Make sure that adding a catalog style before adding any catalog
         # data raises an error.
         with pytest.raises(
             ValueError,
@@ -299,7 +299,7 @@ class ImageWidgetAPITest:
 
     def test_load_catalog_with_skycoord_no_wcs(self, catalog, data):
         # Check that loading a catalog with skycoord but no x/y and
-        # no WCS returns a catlog with None for x and y.
+        # no WCS returns a catalog with None for x and y.
         self.image.load_array(data)
 
         # Remove x/y columns from the catalog

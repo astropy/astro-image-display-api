@@ -151,7 +151,7 @@ class ImageViewerInterface(Protocol):
             name will be generated.
         catalog_style: dict, optional
             A dictionary that specifies the style of the markers used to
-            rerpresent the catalog. See `ImageViewerInterface.set_catalog_style`
+            represent the catalog. See `ImageViewerInterface.set_catalog_style`
             for details.
         """
         raise NotImplementedError

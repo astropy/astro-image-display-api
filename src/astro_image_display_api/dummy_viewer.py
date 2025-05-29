@@ -365,7 +365,7 @@ class ImageViewer:
         try:
             del self._catalogs[catalog_label]
         except KeyError:
-            raise ValueError(f"Marker name {catalog_label} not found.")
+            raise ValueError(f"Catalog label {catalog_label} not found.")
 
     def get_catalog(self, x_colname: str = 'x', y_colname: str = 'y',
                     skycoord_colname: str = 'coord',
