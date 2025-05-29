@@ -158,7 +158,7 @@ class ImageWidgetAPITest:
         self.image.load_catalog(catalog)
         # Check that setting a marker style works
         marker_settings = dict(color='red', shape='x', size=10)
-        self.image.set_catalog_style(**marker_settings)
+        self.image.set_catalog_style(**marker_settings.copy())
 
         retrieved_style = self.image.get_catalog_style()
         # Check that the marker style is set correctly
@@ -174,7 +174,7 @@ class ImageWidgetAPITest:
         self.image.load_catalog(catalog, catalog_label='test1')
         set_style_input = dict(catalog_label='test1', color='blue',
                                      shape='square', size=5)
-        self.image.set_catalog_style(**set_style_input)
+        self.image.set_catalog_style(**set_style_input.copy())
         retrieved_style = self.image.get_catalog_style()
 
         assert set_style_input == retrieved_style
@@ -368,9 +368,12 @@ class ImageWidgetAPITest:
         # for that catalog.
         style = dict(color='blue', shape='x', size=10)
         self.image.load_catalog(catalog, catalog_label='test1',
-                                catalog_style=style)
+                                catalog_style=style.copy())
 
         retrieved_style = self.image.get_catalog_style(catalog_label='test1')
+
+        # Add catalog_label to the style for comparison
+        style['catalog_label'] = 'test1'
         assert retrieved_style == style
 
     def test_remove_catalog(self):

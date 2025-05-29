@@ -18,7 +18,7 @@ from .interface_definition import ImageViewerInterface
 @dataclass
 class CatalogInfo:
     """
-    A named tuple to hold information about a catalog.
+    Class to hold information about a catalog.
     """
     style: dict[str, Any] = field(default_factory=dict)
     data: Table | None = None
@@ -143,7 +143,7 @@ class ImageViewer:
         """
         catalog_label = self._resolve_catalog_label(catalog_label)
 
-        style = self._catalogs[catalog_label].style
+        style = self._catalogs[catalog_label].style.copy()
         style["catalog_label"] = catalog_label
         return style
 
@@ -280,7 +280,7 @@ class ImageViewer:
 
     # Marker-related methods
     def load_catalog(self, table: Table, x_colname: str = 'x', y_colname: str = 'y',
-                    skycoord_colname: str = 'coord', use_skycoord: bool = True,
+                    skycoord_colname: str = 'coord', use_skycoord: bool = False,
                     catalog_label: str | None = None,
                     catalog_style: dict | None = None) -> None:
         try:

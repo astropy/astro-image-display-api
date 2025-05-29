@@ -127,7 +127,7 @@ class ImageViewerInterface(Protocol):
                     catalog_label: str | None = None,
                     catalog_style: dict | None = None) -> None:
         """
-        Add markers to the viewer at positions given by a catalog.
+        Add catalog entries to the viewer at positions given by the catalog.
 
         Parameters
         ----------
