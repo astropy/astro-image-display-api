@@ -1,4 +1,3 @@
-# TODO: How to enable switching out backend and still run the same tests?
 
 import pytest
 
@@ -102,7 +101,6 @@ class ImageWidgetAPITest:
         # have) taken care of setting up the WCS internally if initialized with
         # an NDData that has a WCS.
         ndd = NDData(data=data, wcs=wcs)
-        # TODO: THIS WOULD FAIL ON A VIEWER THAT DOES NOT ALLOW NDDATA OR ARRAY LOADING
         self.image.load_image(ndd)
 
         self.image.offset_by(10 * u.arcmin, 10 * u.arcmin)
@@ -117,7 +115,6 @@ class ImageWidgetAPITest:
 
     def test_zoom_level(self, data):
         # Set data first, since that is needed to determine zoom level
-        # TODO: THIS WOULD FAIL ON A VIEWER THAT DOES NOT ALLOW NDDATA OR ARRAY LOADING
         self.image.load_image(data)
         self.image.zoom_level = 5
         assert self.image.zoom_level == 5
@@ -134,8 +131,6 @@ class ImageWidgetAPITest:
         m_str = str(self.image.marker)
         for key in marker_style.keys():
             assert key in m_str
-
-    # TODO: add test that checks that retrieving markers with an unknown name issues no error
 
     def test_add_markers(self):
         original_marker_name = self.image.DEFAULT_MARKER_NAME
@@ -252,7 +247,6 @@ class ImageWidgetAPITest:
 
     def test_adding_markers_as_world(self, data, wcs):
         ndd = NDData(data=data, wcs=wcs)
-        # TODO: THIS WOULD FAIL ON A VIEWER THAT DOES NOT ALLOW NDDATA OR ARRAY LOADING
         self.image.load_image(ndd)
 
         # Add markers using world coordinates
@@ -299,7 +293,6 @@ class ImageWidgetAPITest:
         assert 'histogram' in self.image.autocut_options
 
         # Setting using histogram requires data
-        # TODO: THIS WOULD FAIL ON A VIEWER THAT DOES NOT ALLOW NDDATA OR ARRAY LOADING
         self.image.load_image(data)
         self.image.cuts = 'histogram'
         assert len(self.image.cuts) == 2
