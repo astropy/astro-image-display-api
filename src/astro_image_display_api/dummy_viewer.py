@@ -51,10 +51,9 @@ class ImageViewer:
     def __post_init__(self):
         # This is a dictionary of marker sets. The keys are the names of the
         # marker sets, and the values are the tables containing the markers.
-        self._default_marker_style = dict(shape="circle", color="yellow", size=10)
         self._catalogs = defaultdict(CatalogInfo)
         self._catalogs[None].data = None
-        self._catalogs[None].style = self._default_marker_style.copy()
+        self._catalogs[None].style = self._default_catalog_style.copy()
 
     def _user_catalog_labels(self) -> list[str]:
         """
@@ -85,6 +84,17 @@ class ImageViewer:
                     )
 
         return catalog_label
+
+    @property
+    def _default_catalog_style(self) -> dict[str, Any]:
+        """
+        The default style for the catalog markers.
+        """
+        return {
+            "shape": "circle",
+            "color": "red",
+            "size": 5,
+        }
 
     def get_stretch(self) -> BaseStretch:
         return self._stretch
@@ -117,7 +127,7 @@ class ImageViewer:
 
     # The methods, grouped loosely by purpose
 
-    def get_catalog_style(self, catalog_label=None) -> dict[str, dict[str, Any]]:
+    def get_catalog_style(self, catalog_label=None) -> dict[str, Any]:
         """
         Get the style for the catalog.
 
@@ -140,9 +150,9 @@ class ImageViewer:
     def set_catalog_style(
             self,
             catalog_label: str | None = None,
-            shape: str = "",
-            color: str = "",
-            size: float = 0,
+            shape: str = "circle",
+            color: str = "red",
+            size: float = 5,
             **kwargs
     ) -> None:
         """
@@ -161,9 +171,9 @@ class ImageViewer:
         **kwargs
             Additional keyword arguments to pass to the marker style.
         """
-        shape = shape if shape else self._default_marker_style["shape"]
-        color = color if color else self._default_marker_style["color"]
-        size = size if size else self._default_marker_style["size"]
+        shape = shape
+        color = color
+        size = size
 
         catalog_label = self._resolve_catalog_label(catalog_label)
 
@@ -174,7 +184,6 @@ class ImageViewer:
             "shape": shape,
             "color": color,
             "size": size,
-            **kwargs,
         }
 
     # Methods for loading data
@@ -308,17 +317,22 @@ class ImageViewer:
 
         catalog_label = self._resolve_catalog_label(catalog_label)
 
+        # Either set new data or append to existing data
         if (
             catalog_label in self._catalogs
             and self._catalogs[catalog_label].data is not None
         ):
+            # If the catalog already exists, we append to it
             old_table = self._catalogs[catalog_label].data
             self._catalogs[catalog_label].data = vstack([old_table, to_add])
         else:
+            # If the catalog does not exist, we create a new one
             self._catalogs[catalog_label].data = to_add
 
+        # Ensure a catalog always has a style
         if catalog_style is None:
-            catalog_style = self._default_marker_style.copy()
+            if not self._catalogs[catalog_label].style:
+                catalog_style = self._default_catalog_style.copy()
 
         self._catalogs[catalog_label].style = catalog_style
 
