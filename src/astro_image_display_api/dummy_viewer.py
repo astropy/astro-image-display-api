@@ -100,7 +100,14 @@ class ImageViewer:
             file path.
         """
         if isinstance(file, (str, os.PathLike)):
-            self._load_fits(file)
+            if isinstance(file, str):
+                is_adsf = file.endswith(".asdf")
+            else:
+                is_asdf = file.suffix == ".asdf"
+            if is_asdf:
+                self._load_asdf(file)
+            else:
+                self._load_fits(file)
         elif isinstance(file, NDData):
             self._load_nddata(file)
         else:
