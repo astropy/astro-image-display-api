@@ -13,10 +13,6 @@ from numpy.typing import ArrayLike
 # Allowed locations for cursor display
 ALLOWED_CURSOR_LOCATIONS = ('top', 'bottom', None)
 
-DEFAULT_MARKER_NAME = 'default-marker-name'
-
-# List of marker names that are for internal use only
-RESERVED_MARKER_SET_NAMES = ('all',)
 
 __all__ = [
     'ImageViewerInterface',
@@ -32,16 +28,9 @@ class ImageViewerInterface(Protocol):
     image_height: int
     zoom_level: float
     cursor: str
-    marker: Any
 
     # Allowed locations for cursor display
     ALLOWED_CURSOR_LOCATIONS: tuple = ALLOWED_CURSOR_LOCATIONS
-
-    # List of marker names that are for internal use only
-    RESERVED_MARKER_SET_NAMES: tuple = RESERVED_MARKER_SET_NAMES
-
-    # Default marker name for marking via API
-    DEFAULT_MARKER_NAME: str = DEFAULT_MARKER_NAME
 
     # The methods, grouped loosely by purpose
 
@@ -132,11 +121,12 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def add_markers(self, table: Table, x_colname: str = 'x', y_colname: str = 'y',
+    def load_catalog(self, table: Table, x_colname: str = 'x', y_colname: str = 'y',
                     skycoord_colname: str = 'coord', use_skycoord: bool = False,
-                    marker_name: str | None = None) -> None:
+                    catalog_label: str | None = None,
+                    catalog_style: dict | None = None) -> None:
         """
-        Add markers to the image.
+        Add catalog entries to the viewer at positions given by the catalog.
 
         Parameters
         ----------
@@ -155,40 +145,85 @@ class ImageViewerInterface(Protocol):
         use_skycoord : bool, optional
             If `True`, the ``skycoord_colname`` column will be used to
             get the marker positions. Default is `False`.
-        marker_name : str, optional
+        catalog_label : str, optional
             The name of the marker set to use. If not given, a unique
             name will be generated.
-        """
-        raise NotImplementedError
-
-    # @abstractmethod
-    # def remove_all_markers(self):
-    #     raise NotImplementedError
-
-    @abstractmethod
-    def reset_markers(self) -> None:
-        """
-        Remove all markers from the image.
+        catalog_style: dict, optional
+            A dictionary that specifies the style of the markers used to
+            represent the catalog. See `ImageViewerInterface.set_catalog_style`
+            for details.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def remove_markers(self, marker_name: str | list[str] | None = None) -> None:
+    def set_catalog_style(
+        self,
+        catalog_label: str | None = None,
+        shape: str = 'circle',
+        color: str = 'red',
+        size: float = 5.0,
+        **kwargs
+    ):
+        """
+        Set the style of the catalog markers.
+
+        Parameters
+        ----------
+        shape : str, optional
+            The shape of the markers. Default is ``'circle'``. The set of
+            supported shapes is listed below in the `Notes` section.
+        color : str, optional
+            The color of the markers. Default is ``'red'``. Permitted colors are
+            any CSS4 color name. CSS4 also permits hex RGB or RGBA colors.
+        size : float, optional
+            The size of the markers. Default is ``5.0``.
+
+        **kwargs
+            Additional keyword arguments to pass to the marker style.
+
+        Notes
+        -----
+        The following shapes are supported: "circle", "square", "crosshair", "plus",
+        "diamond".
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_catalog_style(self, catalog_label: str | None = None) -> dict:
+        """
+        Get the style of the catalog markers.
+
+        Returns
+        -------
+        dict
+            The style of the markers.
+
+        Raises
+        ------
+
+        ValueError
+            If there are multiple catalog styles set and the user has not
+            specified a `catalog_label` for which to get the style.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def remove_catalog(self, catalog_label: str | list[str] | None = None) -> None:
         """
         Remove markers from the image.
 
         Parameters
         ----------
-        marker_name : str, optional
+        catalog_label : str, optional
             The name of the marker set to remove. If the value is ``"all"``,
             then all markers will be removed.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def get_markers(self, x_colname: str = 'x', y_colname: str = 'y',
+    def get_catalog(self, x_colname: str = 'x', y_colname: str = 'y',
                     skycoord_colname: str = 'coord',
-                    marker_name: str | list[str] | None = None) -> Table:
+                    catalog_label: str | list[str] | None = None) -> Table:
         """
         Get the marker positions.
 
@@ -203,7 +238,7 @@ class ImageViewerInterface(Protocol):
         skycoord_colname : str, optional
             The name of the column containing the sky coordinates. Default
             is ``'coord'``.
-        marker_name : str or list of str, optional
+        catalog_label : str or list of str, optional
             The name of the marker set to use. If that value is ``"all"``,
             then all markers will be returned.
 
@@ -211,7 +246,19 @@ class ImageViewerInterface(Protocol):
         -------
         table : `astropy.table.Table`
             The table containing the marker positions. If no markers match the
-            ``marker_name`` parameter, an empty table is returned.
+            ``catalog_label`` parameter, an empty table is returned.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_catalog_names(self) -> list[str]:
+        """
+        Get the names of the loaded catalogs.
+
+        Returns
+        -------
+        list of str
+            The names of the loaded catalogs.
         """
         raise NotImplementedError
 
