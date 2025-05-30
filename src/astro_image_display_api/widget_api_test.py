@@ -1,3 +1,4 @@
+import numbers
 
 import pytest
 
@@ -181,7 +182,7 @@ class ImageWidgetAPITest:
         assert isinstance(vport['center'], tuple)
         assert 'fov' in vport
         # fov should be a float since no WCS
-        assert isinstance(vport['fov'], float)
+        assert isinstance(vport['fov'], numbers.Real)
         assert 'image_label' in vport
         assert vport['image_label'] is None
 
@@ -240,7 +241,7 @@ class ImageWidgetAPITest:
         assert vport_pixel['center'] == wcs.crpix
         # tbh, not at all sure what the fov should be in pixel coordinates,
         # so just check that it is a float.
-        assert isinstance(vport_pixel['fov'], float)
+        assert isinstance(vport_pixel['fov'], numbers.Real)
 
         # Get the viewport in world coordinates
         vport_world = self.image.get_viewport(image_label='test', sky_or_pixel='sky')
