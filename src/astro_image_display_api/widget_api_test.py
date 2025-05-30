@@ -256,6 +256,18 @@ class ImageWidgetAPITest:
                 assert isinstance(vport['center'], tuple)
                 assert isinstance(vport['fov'], float)
 
+    def test_viewport_round_trips(self, data, wcs):
+        # Check that the viewport retrieved with get can be used to set
+        # the viewport again, and that the values are the same.
+        self.image.load_image(NDData(data=data, wcs=wcs), image_label='test')
+        self.image.set_viewport(center=(10, 10), fov=100, image_label='test')
+        vport = self.image.get_viewport(image_label='test')
+        # Set the viewport again using the values from the get_viewport
+        self.image.set_viewport(**vport)
+        # Get the viewport again and check that the values are the same
+        vport2 = self.image.get_viewport(image_label='test')
+        assert vport2 == vport
+
     def test_marker_properties(self):
         # Set the marker style
         marker_style = {'color': 'yellow', 'radius': 10, 'type': 'cross'}
