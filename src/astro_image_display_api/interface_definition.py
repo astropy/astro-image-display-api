@@ -46,6 +46,13 @@ class ImageViewerInterface(Protocol):
         data : Any
             The data to load. This can be a FITS file, a 2D array,
             or an `astropy.nddata.NDData` object.
+
+        image_label : str, optional
+            The label for the image.
+
+        Notes
+        -----
+        Loading an image should also set the viewport for that image.
         """
         raise NotImplementedError
 

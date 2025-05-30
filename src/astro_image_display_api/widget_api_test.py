@@ -168,19 +168,29 @@ class ImageWidgetAPITest:
         with pytest.raises(ValueError, match='[Ii]mage label.*not provided'):
             self.image.get_viewport()
 
+    def test_viewport_is_defined_aster_loading_image(self, data):
+        # Check that the viewport is set to a default value when an image
+        # is loaded, even if no viewport is explicitly set.
+        self.image.load_image(data)
+
+        # Getting the viewport should not fail...
+        vport = self.image.get_viewport()
+
+        assert 'center' in vport
+        # No world, so center should be a tuple
+        assert isinstance(vport['center'], tuple)
+        assert 'fov' in vport
+        # fov should be a float since no WCS
+        assert isinstance(vport['fov'], float)
+        assert 'image_label' in vport
+        assert vport['image_label'] is None
+
     def test_set_get_view_port_no_image_label(self, data):
         # If there is only one image, the viewport should be able to be set
         # and retrieved without an image label.
 
         # Add an image without an image label
         self.image.load_image(data)
-
-        # Getting the viewport should not fail...
-        vport = self.image.get_viewport()
-        assert 'center' in vport
-        assert 'fov' in vport
-        assert 'image_label' in vport
-        assert vport['image_label'] is None
 
         # Set the viewport without an image label
         self.image.set_viewport(center=(10, 10), fov=100)
