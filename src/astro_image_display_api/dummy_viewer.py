@@ -36,7 +36,6 @@ class ImageViewer:
     image_height: int = 0
     zoom_level: float = 1
     _cursor: str = ImageViewerInterface.ALLOWED_CURSOR_LOCATIONS[0]
-    marker: Any = "marker"
     _cuts: BaseInterval | tuple[float, float] = AsymmetricPercentileInterval(upper_percentile=95)
     _stretch: BaseStretch = LinearStretch
     # viewer: Any

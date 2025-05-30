@@ -28,7 +28,6 @@ class ImageViewerInterface(Protocol):
     image_height: int
     zoom_level: float
     cursor: str
-    marker: Any
 
     # Allowed locations for cursor display
     ALLOWED_CURSOR_LOCATIONS: tuple = ALLOWED_CURSOR_LOCATIONS
