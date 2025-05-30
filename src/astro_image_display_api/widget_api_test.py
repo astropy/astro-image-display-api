@@ -300,7 +300,7 @@ class ImageWidgetAPITest:
     def test_load_catalog_with_skycoord_no_wcs(self, catalog, data):
         # Check that loading a catalog with skycoord but no x/y and
         # no WCS returns a catalog with None for x and y.
-        self.image.load_array(data)
+        self.image.load_image(data)
 
         # Remove x/y columns from the catalog
         del catalog['x', 'y']
@@ -315,7 +315,7 @@ class ImageWidgetAPITest:
     def test_load_catalog_with_use_skycoord_no_skycoord_no_wcs(self, catalog, data):
         # Check that loading a catalog with use_skycoord=True but no
         # skycoord column and no WCS raises an error.
-        self.image.load_array(data)
+        self.image.load_image(data)
         del catalog['coord']  # Remove the skycoord column
         with pytest.raises(ValueError, match='Cannot use sky coordinates without'):
             self.image.load_catalog(catalog, use_skycoord=True)
@@ -323,7 +323,7 @@ class ImageWidgetAPITest:
     def test_load_catalog_with_xy_and_wcs(self, catalog, data, wcs):
         # Check that loading a catalog that wants to use sky coordinates,
         # has no coordinate column but has x/y and a WCS works.
-        self.image.load_nddata(NDData(data=data, wcs=wcs))
+        self.image.load_image(NDData(data=data, wcs=wcs))
 
         # Remove the skycoord column from the catalog
         del catalog['coord']
