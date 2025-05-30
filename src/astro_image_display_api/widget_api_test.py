@@ -9,6 +9,7 @@ from astropy.nddata import NDData  # noqa: E402
 from astropy.table import Table, vstack  # noqa: E402
 from astropy import units as u  # noqa: E402
 from astropy.wcs import WCS  # noqa: E402
+from astropy.visualization import AsymmetricPercentileInterval, LogStretch, ManualInterval
 
 __all__ = ['ImageWidgetAPITest']
 
@@ -268,37 +269,34 @@ class ImageWidgetAPITest:
                                    mark_coord_table['coord'].dec.deg)
 
     def test_stretch(self):
-        # Check that the stretch options is not an empty list
-        assert len(self.image.stretch_options) > 0
+        original_stretch = self.image.get_stretch()
 
-        original_stretch = self.image.stretch
-
-        with pytest.raises(ValueError, match='[mM]ust be one of'):
-            self.image.stretch = 'not a valid value'
+        with pytest.raises(ValueError, match=r'Stretch.*not valid.*'):
+            self.image.set_stretch('not a valid value')
 
         # A bad value should leave the stretch unchanged
-        assert self.image.stretch is original_stretch
+        assert self.image.get_stretch() is original_stretch
 
-        self.image.stretch = 'log'
+        self.image.set_stretch(LogStretch())
         # A valid value should change the stretch
-        assert self.image.stretch is not original_stretch
+        assert self.image.get_stretch() is not original_stretch
+        assert isinstance(self.image.get_stretch(), LogStretch)
 
     def test_cuts(self, data):
-        with pytest.raises(ValueError, match='[mM]ust be one of'):
-            self.image.cuts = 'not a valid value'
+        with pytest.raises(ValueError, match='[mM]ust be'):
+            self.image.set_cuts('not a valid value')
 
-        with pytest.raises(ValueError, match='must have length 2'):
-            self.image.cuts = (1, 10, 100)
-
-        assert 'histogram' in self.image.autocut_options
+        with pytest.raises(ValueError, match='[mM]ust be'):
+            self.image.set_cuts((1, 10, 100))
 
         # Setting using histogram requires data
         self.image.load_image(data)
-        self.image.cuts = 'histogram'
-        assert len(self.image.cuts) == 2
+        self.image.set_cuts(AsymmetricPercentileInterval(0.1, 99.9))
+        assert isinstance(self.image.get_cuts(), AsymmetricPercentileInterval)
 
-        self.image.cuts = (10, 100)
-        assert self.image.cuts == (10, 100)
+        self.image.set_cuts((10, 100))
+        assert isinstance(self.image.get_cuts(), ManualInterval)
+        assert self.image.get_cuts().get_limits(data) == (10, 100)
 
     @pytest.mark.skip(reason="Not clear whether colormap is part of the API")
     def test_colormap(self):
