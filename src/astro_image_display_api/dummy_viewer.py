@@ -1,18 +1,31 @@
+import numbers
 import os
+from collections import defaultdict
+from copy import copy
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.nddata import CCDData, NDData
 from astropy.table import Table, vstack
 from astropy.units import Quantity, get_physical_type
 from astropy.wcs import WCS
+from astropy.wcs.utils import proj_plane_pixel_scales
 from astropy.visualization import AsymmetricPercentileInterval, BaseInterval, BaseStretch, LinearStretch, ManualInterval
 from numpy.typing import ArrayLike
 
 from .interface_definition import ImageViewerInterface
 
+@dataclass
+class ViewportInfo:
+    """
+    Class to hold image and viewport information.
+    """
+    center: SkyCoord | tuple[numbers.Real, numbers.Real] | None = None
+    fov: float | Quantity | None = None
+    wcs: WCS | None = None
 
 @dataclass
 class ImageViewer:
@@ -28,7 +41,7 @@ class ImageViewer:
     zoom_level: float = 1
     _cursor: str = ImageViewerInterface.ALLOWED_CURSOR_LOCATIONS[0]
     marker: Any = "marker"
-    _cuts: BaseInterval | tuple[float, float] = AsymmetricPercentileInterval(upper_percentile=95)
+    _cuts: BaseInterval | tuple[numbers.Real, numbers.Real] = AsymmetricPercentileInterval(upper_percentile=95)
     _stretch: BaseStretch = LinearStretch
     # viewer: Any
 
@@ -46,7 +59,15 @@ class ImageViewer:
     _previous_marker: Any = ""
     _markers: dict[str, Table] = field(default_factory=dict)
     _wcs: WCS | None = None
-    _center: tuple[float, float] = (0.0, 0.0)
+    _center: tuple[numbers.Real, numbers.Real] = (0.0, 0.0)
+
+
+    def __post_init__(self):
+        # Set up the initial state of the viewer
+        self._images = defaultdict(ViewportInfo)
+        self._images[None].center = None
+        self._images[None].fov = None
+        self._images[None].wcs = None
 
     def get_stretch(self) -> BaseStretch:
         return self._stretch
@@ -59,7 +80,7 @@ class ImageViewer:
     def get_cuts(self) -> tuple:
         return self._cuts
 
-    def set_cuts(self, value: tuple[float, float] | BaseInterval) -> None:
+    def set_cuts(self, value: tuple[numbers.Real, numbers.Real] | BaseInterval) -> None:
         if isinstance(value, tuple) and len(value) == 2:
             self._cuts = ManualInterval(value[0], value[1])
         elif isinstance(value, BaseInterval):
@@ -80,7 +101,42 @@ class ImageViewer:
     # The methods, grouped loosely by purpose
 
     # Methods for loading data
-    def load_image(self, file: str | os.PathLike | ArrayLike | NDData) -> None:
+    def _user_image_labels(self) -> list[str]:
+        """
+        Get the list of user-defined image labels.
+
+        Returns
+        -------
+        list of str
+            The list of user-defined image labels.
+        """
+        return [label for label in self._images if label is not None]
+
+    def _resolve_image_label(self, image_label: str | None) -> str:
+        """
+        Figure out the catalog label if the user did not specify one. This
+        is needed so that the user gets what they expect in the simple case
+        where there is only one catalog loaded. In that case the user may
+        or may not have actually specified a catalog label.
+        """
+        user_keys = self._user_image_labels()
+        if image_label is None:
+            match len(user_keys):
+                case 0:
+                    # No user-defined catalog labels, so return the default label.
+                    image_label = None
+                case 1:
+                    # The user must have loaded a catalog, so return that instead of
+                    # the default label, which live in the key None.
+                    image_label = user_keys[0]
+                case _:
+                    raise ValueError(
+                        "Multiple catalog styles defined. Please specify a image_label to get the style."
+                    )
+
+        return image_label
+
+    def load_image(self, file: str | os.PathLike | ArrayLike | NDData, image_label: str | None = None) -> None:
         """
         Load a FITS file into the viewer.
 
@@ -89,32 +145,42 @@ class ImageViewer:
         file : str or `astropy.io.fits.HDU`
             The FITS file to load. If a string, it can be a URL or a
             file path.
+
+        image_label : str, optional
+            A label for the image.
         """
+        image_label = self._resolve_image_label(image_label)
+
+        # Delete the current viewport if it exists
+        if image_label in self._images:
+            del self._images[image_label]
+
         if isinstance(file, (str, os.PathLike)):
             if isinstance(file, str):
                 is_adsf = file.endswith(".asdf")
             else:
                 is_asdf = file.suffix == ".asdf"
             if is_asdf:
-                self._load_asdf(file)
+                self._load_asdf(file, image_label)
             else:
-                self._load_fits(file)
+                self._load_fits(file, image_label)
         elif isinstance(file, NDData):
-            self._load_nddata(file)
+            self._load_nddata(file, image_label)
         else:
             # Assume it is a 2D array
-            self._load_array(file)
+            self._load_array(file, image_label)
 
-    def _load_fits(self, file: str | os.PathLike) -> None:
+    def _load_fits(self, file: str | os.PathLike, image_label: str | None) -> None:
         ccd = CCDData.read(file)
-        self._wcs = ccd.wcs
-        self.image_height, self.image_width = ccd.shape
-        # Totally made up number...as currently defined, zoom_level means, esentially, ratio
-        # of image size to viewer size.
-        self.zoom_level = 1.0
-        self.center_on((self.image_width / 2, self.image_height / 2))
+        height, width = ccd.shape
+        self._images[image_label].wcs = ccd.wcs
+        self.set_viewport(
+            center=(width / 2, height / 2),
+            fov=max(ccd.shape),
+            image_label=image_label
+        )
 
-    def _load_array(self, array: ArrayLike) -> None:
+    def _load_array(self, array: ArrayLike, image_label: str | None) -> None:
         """
         Load a 2D array into the viewer.
 
@@ -123,14 +189,15 @@ class ImageViewer:
         array : array-like
             The array to load.
         """
-        self.image_height, self.image_width = array.shape
-        # Totally made up number...as currently defined, zoom_level means, esentially, ratio
-        # of image size to viewer size.
-        self.zoom_level = 1.0
-        self.center_on((self.image_width / 2, self.image_height / 2))
+        height, width = array.shape
+        self._images[image_label].wcs = None  # No WCS for raw arrays
+        self.set_viewport(
+            center=(width / 2, height / 2),
+            fov=max(array.shape),
+            image_label=image_label
+        )
 
-
-    def _load_nddata(self, data: NDData) -> None:
+    def _load_nddata(self, data: NDData, image_label: str | None) -> None:
         """
         Load an `astropy.nddata.NDData` object into the viewer.
 
@@ -139,15 +206,16 @@ class ImageViewer:
         data : `astropy.nddata.NDData`
             The NDData object to load.
         """
-        self._wcs = data.wcs
+        self._images[image_label].wcs = data.wcs
         # Not all NDDData objects have a shape, apparently
-        self.image_height, self.image_width = data.data.shape
-        # Totally made up number...as currently defined, zoom_level means, esentially, ratio
-        # of image size to viewer size.
-        self.zoom_level = 1.0
-        self.center_on((self.image_width / 2, self.image_height / 2))
+        height, width = data.data.shape
+        self.set_viewport(
+            center=(width / 2, height / 2),
+            fov=max(data.data.shape),
+            image_label=image_label
+        )
 
-    def _load_asdf(self, asdf_file: str | os.PathLike) -> None:
+    def _load_asdf(self, asdf_file: str | os.PathLike, image_label: str | None) -> None:
         """
         Not implementing some load types is fine.
         """
@@ -313,67 +381,94 @@ class ImageViewer:
 
 
     # Methods that modify the view
-    def center_on(self, point: tuple | SkyCoord):
-        """
-        Center the view on the point.
+    def set_viewport(
+                self, center: SkyCoord | tuple[numbers.Real, numbers.Real] | None = None,
+        fov: Quantity | numbers.Real | None = None,
+        image_label: str | None = None
+    ) -> None:
+        image_label = self._resolve_image_label(image_label)
 
-        Parameters
-        ----------
-        tuple or `~astropy.coordinates.SkyCoord`
-            If tuple of ``(X, Y)`` is given, it is assumed
-            to be in data coordinates.
-        """
-        # currently there is no way to get the position of the center, but we may as well make
-        # note of it
-        if isinstance(point, SkyCoord):
-            if self._wcs is not None:
-                point = self._wcs.world_to_pixel(point)
-            else:
-                raise ValueError("WCS is not set. Cannot convert to pixel coordinates.")
+        # Get current center/fov, if any, so that the user may input only one of them
+        # after the initial setup if they wish.
+        current_viewport = copy(self._images[image_label])
+        if center is None:
+            center = current_viewport.center
+        if fov is None:
+            fov = current_viewport.fov
 
-        self._center = point
+        # If either center or fov is None these checks will raise an appropriate error
+        if not isinstance(center, (SkyCoord, tuple)):
+            raise TypeError("Invalid value for center. Center must be a SkyCoord or tuple of (X, Y).")
+        if not isinstance(fov, (Quantity, numbers.Real)):
+            raise TypeError("Invalid value for fov. FOV must be a Quantity or float.")
 
-    def offset_by(self, dx: float | Quantity, dy: float | Quantity) -> None:
-        """
-        Move the center to a point that is given offset
-        away from the current center.
+        # Check that the center and fov are compatible with the current image
+        if self._images[image_label].wcs is None:
+            if current_viewport.center is not None:
+                # If there is a WCS either input is fine. If there is no WCS then we only
+                # check wther the new center is the same type as the current center.
+                if isinstance(center, SkyCoord) and not isinstance(current_viewport.center, SkyCoord):
+                    raise ValueError("Center must be a SkyCoord for this image when WCS is not set.")
+                elif isinstance(center, tuple) and not isinstance(current_viewport.center, tuple):
+                    raise ValueError("Center must be a tuple of (X, Y) for this image when WCS is not set.")
+            if current_viewport.fov is not None:
+                if isinstance(fov, Quantity) and not isinstance(current_viewport.fov, Quantity):
+                    raise ValueError("FOV must be a angular Quantity for this image when WCS is not set.")
+                elif isinstance(fov, numbers.Real) and not isinstance(current_viewport.fov, numbers.Real):
+                    raise ValueError("FOV must be a float for this image when WCS is set.")
 
-        Parameters
-        ----------
-        dx, dy : float or `~astropy.units.Quantity`
-            Offset value. Without a unit, assumed to be pixel offsets.
-            If a unit is attached, offset by pixel or sky is assumed from
-            the unit.
-        """
-        # Convert to quantity to make the rest of the processing uniform
-        dx = Quantity(dx)
-        dy = Quantity(dy)
+        # 😅 if we made it this far we should be able to handle the actual setting
+        self._images[image_label].center = center
+        self._images[image_label].fov = fov
 
-        # This raises a UnitConversionError if the units are not compatible
-        dx.to(dy.unit)
 
-        # Do we have an angle or pixel offset?
-        if get_physical_type(dx) == "angle":
-            # This is a sky offset
-            if self._wcs is not None:
-                old_center_coord = self._wcs.pixel_to_world(self._center[0], self._center[1])
-                new_center = old_center_coord.spherical_offsets_by(dx, dy)
-                self.center_on(new_center)
-            else:
-                raise ValueError("WCS is not set. Cannot convert to pixel coordinates.")
+    set_viewport.__doc__ = ImageViewerInterface.set_viewport.__doc__
+
+    def get_viewport(
+        self, sky_or_pixel: str | None = None, image_label: str | None = None
+    ) -> dict[str, Any]:
+        if sky_or_pixel not in (None, "sky", "pixel"):
+            raise ValueError("sky_or_pixel must be 'sky', 'pixel', or None.")
+        image_label = self._resolve_image_label(image_label)
+
+        viewport = self._images[image_label]
+        if sky_or_pixel == "sky":
+            if isinstance(viewport.center, SkyCoord):
+                center = viewport.center
+            elif isinstance(viewport.center, tuple):
+                # If the center is a tuple, we need to convert it to SkyCoord
+                if viewport.wcs is None:
+                    raise ValueError("WCS is not set. Cannot convert pixel coordinates to sky coordinates.")
+                center = viewport.wcs.pixel_to_world(viewport.center[0], viewport.center[1])
+            if isinstance(viewport.fov, Quantity):
+                fov = viewport.fov
+            elif isinstance(viewport.fov, numbers.Real):
+                if viewport.wcs is None:
+                    raise ValueError("WCS is not set. Cannot convert FOV to sky coordinates.")
+                pixel_scale = proj_plane_pixel_scales(viewport.wcs)
+                fov = pixel_scale * viewport.fov * u.degree
         else:
-            # This is a pixel offset
-            new_center = (self._center[0] + dx.value, self._center[1] + dy.value)
-            self.center_on(new_center)
+            # Pixel coordinates
+            if isinstance(viewport.center, SkyCoord):
+                if viewport.wcs is None:
+                    raise ValueError("WCS is not set. Cannot convert sky coordinates to pixel coordinates.")
+                center = viewport.wcs.world_to_pixel(viewport.center)
+            else:
+                center = viewport.center
+            if isinstance(viewport.fov, Quantity):
+                if viewport.wcs is None:
+                    raise ValueError("WCS is not set. Cannot convert FOV to pixel coordinates.")
+                pixel_scale = proj_plane_pixel_scales(viewport.wcs)
+                fov = viewport.fov / pixel_scale
+            else:
+                fov = viewport.fov
 
-    def zoom(self, val) -> None:
-        """
-        Zoom in or out by the given factor.
+        return dict(
+            center=center,
+            fov=fov,
+            wcs=viewport.wcs,
+            image_label=image_label
+        )
 
-        Parameters
-        ----------
-        val : int
-            The zoom level to zoom the image.
-            See `zoom_level`.
-        """
-        self.zoom_level *= val
+
+    get_viewport.__doc__ = ImageViewerInterface.get_viewport.__doc__
