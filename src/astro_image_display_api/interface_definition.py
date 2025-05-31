@@ -295,7 +295,8 @@ class ImageViewerInterface(Protocol):
         ------
         TypeError
             If the `center` is not a `SkyCoord` object or a tuple of floats, or if
-            the `fov` is not a angular `Quantity` or a float
+            the `fov` is not a angular `Quantity` or a float, or if there is no WCS
+            and the center or field of view require a WCS to be applied.
 
         ValueError
             If `image_label` is not provided when there are multiple images loaded.
