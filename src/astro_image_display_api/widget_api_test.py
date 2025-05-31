@@ -5,7 +5,7 @@ import pytest
 import numpy as np
 
 from astropy.io import fits
-from astropy.nddata import NDData
+from astropy.nddata import CCDData, NDData
 from astropy.table import Table, vstack
 from astropy import units as u
 from astropy.wcs import WCS
@@ -31,6 +31,7 @@ class ImageWidgetAPITest:
         w = WCS(naxis=2)
 
         # Set up an "Airy's zenithal" projection
+        # Note: WCS is 1-based, not 0-based
         w.wcs.crpix = [-234.75, 8.3393]
         w.wcs.cdelt = np.array([-0.066667, 0.066667])
         w.wcs.crval = [0, -90]
@@ -113,12 +114,12 @@ class ImageWidgetAPITest:
 
     def test_set_get_center_world(self, data, wcs):
         self.image.load_image(NDData(data=data, wcs=wcs), image_label='test')
-        self.image.set_viewport(center=SkyCoord(*wcs.crval, unit='deg'), image_label='test')
+        self.image.set_viewport(center=SkyCoord(*wcs.wcs.crval, unit='deg'), image_label='test')
 
         vport = self.image.get_viewport(image_label='test')
         assert isinstance(vport['center'], SkyCoord)
-        assert vport['center'].ra.deg == pytest.approx(wcs.crval[0])
-        assert vport['center'].dec.deg == pytest.approx(wcs.crval[1])
+        assert vport['center'].ra.deg == pytest.approx(wcs.wcs.crval[0])
+        assert vport['center'].dec.deg == pytest.approx(wcs.wcs.crval[1])
 
     def test_set_get_fov_pixel(self, data):
         # Set data first, since that is needed to determine zoom level
@@ -136,10 +137,14 @@ class ImageWidgetAPITest:
         # Set the FOV in world coordinates
         self.image.set_viewport(fov=0.1 * u.deg, image_label='test')
         vport = self.image.get_viewport(image_label='test')
-        assert isinstance(vport['fov'], SkyCoord)
-        assert vport['fov'].deg == pytest.approx(0.1)
+        assert isinstance(vport['fov'], u.Quantity)
+        assert len(np.atleast_1d(vport['fov'])) == 1
+        assert vport['fov'].unit.physical_type == 'angle'
+        fov_degree = vport['fov'].to(u.degree).value
+        assert fov_degree == pytest.approx(0.1)
 
     def test_set_get_viewport_errors(self, data, wcs):
+        # Test several of the expected errors that can be raised
         self.image.load_image(NDData(data=data, wcs=wcs), image_label='test')
 
         # fov can be float or an angular Qunatity
@@ -166,25 +171,64 @@ class ImageWidgetAPITest:
         # If there are multiple images loaded, the image_label must be provided
         self.image.load_image(data, image_label='another test')
 
-        with pytest.raises(ValueError, match='[Ii]mage label.*not provided'):
+        with pytest.raises(ValueError, match='Multiple catalog styles defined'):
             self.image.get_viewport()
 
-    def test_viewport_is_defined_aster_loading_image(self, data):
+        # setting sky_or_pixel to something other than 'sky' or 'pixel' or None
+        # should raise an error
+        with pytest.raises(ValueError, match='[Ss]ky_or_pixel must be'):
+            self.image.get_viewport(sky_or_pixel='not a valid value')
+
+    def test_set_get_viewport_errors_because_no_wcs(self, data):
+        # Check that errors are raised when they should be when calling
+        # get_viewport when no WCS is present.
+
+        # Load the data without a WCS
+        self.image.load_image(data, image_label='test')
+
+        # Set the viewport with a SkyCoord center
+        with pytest.raises(TypeError, match='Center must be a tuple'):
+            self.image.set_viewport(center=SkyCoord(ra=10, dec=20, unit='deg'), image_label='test')
+
+        # Set the viewport with a Quantity fov
+        with pytest.raises(TypeError, match='FOV must be a float'):
+            self.image.set_viewport(fov=100 * u.arcmin, image_label='test')
+
+        # Try getting the viewport as sky
+        with pytest.raises(ValueError, match='WCS is not set'):
+            self.image.get_viewport(image_label='test', sky_or_pixel='sky')
+
+    @pytest.mark.parametrize("world", [True, False])
+    def test_viewport_is_defined_after_loading_image(self, tmp_path, data, wcs, world):
         # Check that the viewport is set to a default value when an image
         # is loaded, even if no viewport is explicitly set.
-        self.image.load_image(data)
+
+        # Load the image from FITS to ensure that at least one image with WCS
+        # has been loaded from FITS.
+        wcs = wcs if world else None
+        ccd = CCDData(data=data, unit="adu", wcs=wcs)
+
+        ccd_path = tmp_path / 'test.fits'
+        ccd.write(ccd_path)
+        self.image.load_image(ccd_path)
 
         # Getting the viewport should not fail...
         vport = self.image.get_viewport()
 
         assert 'center' in vport
-        # No world, so center should be a tuple
-        assert isinstance(vport['center'], tuple)
+
         assert 'fov' in vport
-        # fov should be a float since no WCS
-        assert isinstance(vport['fov'], numbers.Real)
         assert 'image_label' in vport
         assert vport['image_label'] is None
+        if world:
+            assert isinstance(vport['center'], SkyCoord)
+            # fov should be a Quantity since WCS is present
+            assert isinstance(vport['fov'], u.Quantity)
+        else:
+            # No world, so center should be a tuple
+            assert isinstance(vport['center'], tuple)
+            # fov should be a float since no WCS
+            assert isinstance(vport['fov'], numbers.Real)
 
     def test_set_get_view_port_no_image_label(self, data):
         # If there is only one image, the viewport should be able to be set
@@ -232,13 +276,15 @@ class ImageWidgetAPITest:
         # Load the data with a WCS
         self.image.load_image(NDData(data=data, wcs=wcs), image_label='test')
 
-        input_center = SkyCoord(*wcs.val, unit='deg')
+        input_center = SkyCoord(*wcs.wcs.crval, unit='deg')
         input_fov = 2 * u.arcmin
         self.image.set_viewport(center=input_center, fov=input_fov, image_label='test')
 
         # Get the viewport in pixel coordinates
         vport_pixel = self.image.get_viewport(image_label='test', sky_or_pixel='pixel')
-        assert vport_pixel['center'] == wcs.crpix
+        # The WCS set up for the tests is 1-based, rather than the usual 0-based,
+        # so we need to subtract 1 from the pixel coordinates.
+        assert all(vport_pixel['center'] == (wcs.wcs.crpix - 1))
         # tbh, not at all sure what the fov should be in pixel coordinates,
         # so just check that it is a float.
         assert isinstance(vport_pixel['fov'], numbers.Real)
@@ -266,7 +312,33 @@ class ImageWidgetAPITest:
                 assert vport['fov'].unit.physical_type == "angle"
             case 'pixel':
                 assert isinstance(vport['center'], tuple)
-                assert isinstance(vport['fov'], float)
+                assert isinstance(vport['fov'], numbers.Real)
+
+    def test_get_viewport_with_wcs_set_pixel_or_world(self, data, wcs):
+        # Check that the viewport can be retrieved in both pixel and world
+        # after setting with the opposite if the WCS is set.
+        # Load the data with a WCS
+        self.image.load_image(NDData(data=data, wcs=wcs), image_label='test')
+
+        # Set the viewport in world coordinates
+        input_center = SkyCoord(*wcs.wcs.crval, unit='deg')
+        input_fov = 2 * u.arcmin
+        self.image.set_viewport(center=input_center, fov=input_fov, image_label='test')
+
+        # Get the viewport in pixel coordinates
+        vport_pixel = self.image.get_viewport(image_label='test', sky_or_pixel='pixel')
+        assert all(vport_pixel['center'] == (wcs.wcs.crpix - 1))
+        assert isinstance(vport_pixel['fov'], numbers.Real)
+
+        # Set the viewport in pixel coordinates
+        input_center_pixel = (wcs.wcs.crpix[0], wcs.wcs.crpix[1])
+        input_fov_pixel = 100  # in pixels
+        self.image.set_viewport(center=input_center_pixel, fov=input_fov_pixel, image_label='test')
+
+        # Get the viewport in world coordinates
+        vport_world = self.image.get_viewport(image_label='test', sky_or_pixel='sky')
+        assert vport_world['center'] == wcs.pixel_to_world(*input_center_pixel)
+        assert isinstance(vport_world['fov'], u.Quantity)
 
     def test_viewport_round_trips(self, data, wcs):
         # Check that the viewport retrieved with get can be used to set
