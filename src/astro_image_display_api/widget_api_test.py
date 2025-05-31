@@ -20,7 +20,7 @@ class ImageWidgetAPITest:
     @pytest.fixture
     def data(self):
         rng = np.random.default_rng(1234)
-        return rng.random((100, 100))
+        return rng.random((100, 150))
 
     @pytest.fixture
     def wcs(self):
