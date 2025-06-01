@@ -58,7 +58,7 @@ class ImageViewerInterface(Protocol):
 
     # Setting and getting image properties
     @abstractmethod
-    def set_cuts(self, cuts: tuple | BaseInterval) -> None:
+    def set_cuts(self, cuts: tuple | BaseInterval, image_label: str | None = None) -> None:
         """
         Set the cuts for the image.
 
@@ -68,13 +68,24 @@ class ImageViewerInterface(Protocol):
             The cuts to set. If a tuple, it should be of the form
             ``(min, max)`` and will be interpreted as a
             `~astropy.visualization.ManualInterval`.
+
+        image_label : str, optional
+            The label of the image to set the cuts for. If not given and there is
+            only one image loaded, the cuts for that image are set.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def get_cuts(self) -> BaseInterval:
+    def get_cuts(self, image_label: str | None = None) -> BaseInterval:
         """
         Get the current cuts for the image.
+
+        Parameters
+        ----------
+        image_label : str, optional
+            The label of the image to get the cuts for. If not given and there is
+            only one image loaded, the cuts for that image are returned. If there are
+            multiple images and no label is provided, an error is raised.
 
         Returns
         -------
@@ -84,7 +95,7 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def set_stretch(self, stretch: BaseStretch) -> None:
+    def set_stretch(self, stretch: BaseStretch, image_label: str | None = None) -> None:
         """
         Set the stretch for the image.
 
@@ -93,13 +104,24 @@ class ImageViewerInterface(Protocol):
         stretch : Any stretch from `~astropy.visualization`
             The stretch to set. This can be any subclass of
             `~astropy.visualization.BaseStretch`.
+
+        image_label : str, optional
+            The label of the image to set the cuts for. If not given and there is
+            only one image loaded, the cuts for that image are set.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def get_stretch(self) -> BaseStretch:
+    def get_stretch(self, image_label: str | None = None) -> BaseStretch:
         """
         Get the current stretch for the image.
+
+        Parameters
+        ----------
+        image_label : str, optional
+            The label of the image to get the cuts for. If not given and there is
+            only one image loaded, the cuts for that image are returned. If there are
+            multiple images and no label is provided, an error is raised.
 
         Returns
         -------
