@@ -248,23 +248,24 @@ class ImageWidgetAPITest:
 
     def test_set_get_viewport_single_label(self, data):
         # If there is only one image, the viewport should be able to be set
-        # and retrieved with an image label.
+        # and retrieved without an image label as long as the image
+        # has an image label.
 
         # Add an image with an image label
         self.image.load_image(data, image_label='test')
 
         # Getting the viewport should not fail...
-        vport = self.image.get_viewport(image_label='test')
+        vport = self.image.get_viewport()
         assert 'center' in vport
         assert 'fov' in vport
         assert 'image_label' in vport
         assert vport['image_label'] == 'test'
 
         # Set the viewport with an image label
-        self.image.set_viewport(center=(10, 10), fov=100, image_label='test')
+        self.image.set_viewport(center=(10, 10), fov=100)
 
         # Getting the viewport again should return the same values
-        vport = self.image.get_viewport(image_label='test')
+        vport = self.image.get_viewport()
         assert vport['center'] == (10, 10)
         assert vport['fov'] == 100
         assert vport['image_label'] == 'test'
