@@ -9,7 +9,7 @@ from astropy.nddata import CCDData, NDData
 from astropy.table import Table, vstack
 from astropy import units as u
 from astropy.wcs import WCS
-from astropy.visualization import AsymmetricPercentileInterval, LogStretch, ManualInterval
+from astropy.visualization import AsymmetricPercentileInterval, BaseInterval, BaseStretch, LogStretch, ManualInterval
 
 __all__ = ['ImageWidgetAPITest']
 
@@ -171,7 +171,7 @@ class ImageWidgetAPITest:
         # If there are multiple images loaded, the image_label must be provided
         self.image.load_image(data, image_label='another test')
 
-        with pytest.raises(ValueError, match='Multiple catalog styles defined'):
+        with pytest.raises(ValueError, match='Multiple image labels defined'):
             self.image.get_viewport()
 
         # setting sky_or_pixel to something other than 'sky' or 'pixel' or None
@@ -230,7 +230,7 @@ class ImageWidgetAPITest:
             # fov should be a float since no WCS
             assert isinstance(vport['fov'], numbers.Real)
 
-    def test_set_get_view_port_no_image_label(self, data):
+    def test_set_get_viewport_no_image_label(self, data):
         # If there is only one image, the viewport should be able to be set
         # and retrieved without an image label.
 
@@ -685,6 +685,18 @@ class ImageWidgetAPITest:
         assert isinstance(stretch, LogStretch)
         assert isinstance(cuts, ManualInterval)
         assert cuts.get_limits(data) == (10, 100)
+
+    def test_stretch_cuts_are_set_after_loading_image(self, data):
+        # Check that stretch and cuts are set to default values after loading an image
+        self.image.load_image(data, image_label='test')
+
+        stretch = self.image.get_stretch(image_label='test')
+        cuts = self.image.get_cuts(image_label='test')
+
+        # Backends can set whatever stretch and cuts they want, so
+        # we just check that they are instances of the expected classes.
+        assert isinstance(stretch, BaseStretch)
+        assert isinstance(cuts, BaseInterval)
 
     def test_stretch_cuts_errors(self, data):
         # Check that errors are raised when trying to get or set stretch or cuts
