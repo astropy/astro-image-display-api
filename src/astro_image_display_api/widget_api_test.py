@@ -670,6 +670,39 @@ class ImageWidgetAPITest:
         assert isinstance(self.image.get_cuts(), ManualInterval)
         assert self.image.get_cuts().get_limits(data) == (10, 100)
 
+    def test_stretch_cuts_labels(self, data):
+        # Check that stretch and cuts can be set with labels
+        self.image.load_image(data, image_label='test')
+
+        # Set stretch and cuts with labels
+        self.image.set_stretch(LogStretch(), image_label='test')
+        self.image.set_cuts((10, 100), image_label='test')
+
+        # Get stretch and cuts with labels
+        stretch = self.image.get_stretch(image_label='test')
+        cuts = self.image.get_cuts(image_label='test')
+
+        assert isinstance(stretch, LogStretch)
+        assert isinstance(cuts, ManualInterval)
+        assert cuts.get_limits(data) == (10, 100)
+
+    def test_stretch_cuts_errors(self, data):
+        # Check that errors are raised when trying to get or set stretch or cuts
+        # for an image label that does not exist.
+        self.image.load_image(data, image_label='test')
+
+        with pytest.raises(ValueError, match='[Ii]mage label.*not found'):
+            self.image.get_stretch(image_label='not a valid label')
+
+        with pytest.raises(ValueError, match='[Ii]mage label.*not found'):
+            self.image.get_cuts(image_label='not a valid label')
+
+        with pytest.raises(ValueError, match='[Ii]mage label.*not found'):
+            self.image.set_stretch(LogStretch(), image_label='not a valid label')
+
+        with pytest.raises(ValueError, match='[Ii]mage label.*not found'):
+            self.image.set_cuts((10, 100), image_label='not a valid label')
+
     @pytest.mark.skip(reason="Not clear whether colormap is part of the API")
     def test_colormap(self):
         cmap_desired = 'gray'
