@@ -4,6 +4,7 @@ import pytest
 
 import numpy as np
 
+from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.nddata import CCDData, NDData
 from astropy.table import Table, vstack

@@ -1,7 +1,7 @@
 import numbers
 import os
 from collections import defaultdict
-from copy import deepcopy
+from copy import copy, deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
