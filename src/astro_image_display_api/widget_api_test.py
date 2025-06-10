@@ -1,14 +1,16 @@
+import numbers
 
 import pytest
 
 import numpy as np
 
+from astropy.coordinates import SkyCoord
 from astropy.io import fits
-from astropy.nddata import NDData
+from astropy.nddata import CCDData, NDData
 from astropy.table import Table, vstack
 from astropy import units as u
 from astropy.wcs import WCS
-from astropy.visualization import AsymmetricPercentileInterval, LogStretch, ManualInterval
+from astropy.visualization import AsymmetricPercentileInterval, BaseInterval, BaseStretch, LogStretch, ManualInterval
 
 __all__ = ['ImageWidgetAPITest']
 
@@ -19,7 +21,7 @@ class ImageWidgetAPITest:
     @pytest.fixture
     def data(self):
         rng = np.random.default_rng(1234)
-        return rng.random((100, 100))
+        return rng.random((100, 150))
 
     @pytest.fixture
     def wcs(self):
@@ -30,6 +32,7 @@ class ImageWidgetAPITest:
         w = WCS(naxis=2)
 
         # Set up an "Airy's zenithal" projection
+        # Note: WCS is 1-based, not 0-based
         w.wcs.crpix = [-234.75, 8.3393]
         w.wcs.cdelt = np.array([-0.066667, 0.066667])
         w.wcs.crval = [0, -90]
@@ -103,38 +106,253 @@ class ImageWidgetAPITest:
 
         self.image.load_image(load_arg)
 
-    def test_center_on(self):
-        self.image.center_on((10, 10))  # X, Y
+    def test_set_get_center_xy(self, data):
+        self.image.load_image(data, image_label='test')
+        self.image.set_viewport(center=(10, 10), image_label='test')  # X, Y
+        vport = self.image.get_viewport(image_label='test')
+        assert vport['center'] == (10, 10)
+        assert vport['image_label'] == 'test'
 
-    def test_offset_by(self, data, wcs):
-        self.image.offset_by(10, 10)  # dX, dY
+    def test_set_get_center_world(self, data, wcs):
+        self.image.load_image(NDData(data=data, wcs=wcs), image_label='test')
+        self.image.set_viewport(center=SkyCoord(*wcs.wcs.crval, unit='deg'), image_label='test')
 
-        # Testing offset by WCS requires a WCS. The viewer will (or ought to
-        # have) taken care of setting up the WCS internally if initialized with
-        # an NDData that has a WCS.
-        ndd = NDData(data=data, wcs=wcs)
-        self.image.load_image(ndd)
+        vport = self.image.get_viewport(image_label='test')
+        assert isinstance(vport['center'], SkyCoord)
+        assert vport['center'].ra.deg == pytest.approx(wcs.wcs.crval[0])
+        assert vport['center'].dec.deg == pytest.approx(wcs.wcs.crval[1])
 
-        self.image.offset_by(10 * u.arcmin, 10 * u.arcmin)
-
-        # A mix of pixel and sky should produce an error
-        with pytest.raises(u.UnitConversionError, match='are not convertible'):
-            self.image.offset_by(10 * u.arcmin, 10)
-
-        # A mix of inconsistent units should produce an error
-        with pytest.raises(u.UnitConversionError, match='are not convertible'):
-            self.image.offset_by(1 * u.arcsec, 1 * u.AA)
-
-    def test_zoom_level(self, data):
+    def test_set_get_fov_pixel(self, data):
         # Set data first, since that is needed to determine zoom level
-        self.image.load_image(data)
-        self.image.zoom_level = 5
-        assert self.image.zoom_level == 5
+        self.image.load_image(data, image_label='test')
 
-    def test_zoom(self):
-        self.image.zoom_level = 3
-        self.image.zoom(2)
-        assert self.image.zoom_level == 6  # 3 x 2
+        self.image.set_viewport(fov=100, image_label='test')
+        vport = self.image.get_viewport(image_label='test')
+        assert vport['fov'] == 100
+        assert vport['image_label'] == 'test'
+
+    def test_set_get_fov_world(self, data, wcs):
+        # Set data first, since that is needed to determine zoom level
+        self.image.load_image(NDData(data=data, wcs=wcs), image_label='test')
+
+        # Set the FOV in world coordinates
+        self.image.set_viewport(fov=0.1 * u.deg, image_label='test')
+        vport = self.image.get_viewport(image_label='test')
+        assert isinstance(vport['fov'], u.Quantity)
+        assert len(np.atleast_1d(vport['fov'])) == 1
+        assert vport['fov'].unit.physical_type == 'angle'
+        fov_degree = vport['fov'].to(u.degree).value
+        assert fov_degree == pytest.approx(0.1)
+
+    def test_set_get_viewport_errors(self, data, wcs):
+        # Test several of the expected errors that can be raised
+        self.image.load_image(NDData(data=data, wcs=wcs), image_label='test')
+
+        # fov can be float or an angular Qunatity
+        with pytest.raises(u.UnitTypeError, match='[Ii]ncorrect unit for fov'):
+            self.image.set_viewport(fov=100 * u.meter, image_label='test')
+
+        # try an fov that is completely the wrong type
+        with pytest.raises(TypeError, match='[Ii]nvalid value for fov'):
+            self.image.set_viewport(fov='not a valid value', image_label='test')
+
+        # center can be a SkyCoord or a tuple of floats. Try a value that is neither
+        with pytest.raises(TypeError, match='[Ii]nvalid value for center'):
+            self.image.set_viewport(center='not a valid value', image_label='test')
+
+        # Check that an error is raised if a label is provided that does not
+        # match an image that is loaded.
+        with pytest.raises(ValueError, match='[Ii]mage label.*not found'):
+            self.image.set_viewport(center=(10, 10), fov=100, image_label='not a valid label')
+
+        # Getting a viewport for an image_label that does not exist should raise an error
+        with pytest.raises(ValueError, match='[Ii]mage label.*not found'):
+            self.image.get_viewport(image_label='not a valid label')
+
+        # If there are multiple images loaded, the image_label must be provided
+        self.image.load_image(data, image_label='another test')
+
+        with pytest.raises(ValueError, match='Multiple image labels defined'):
+            self.image.get_viewport()
+
+        # setting sky_or_pixel to something other than 'sky' or 'pixel' or None
+        # should raise an error
+        with pytest.raises(ValueError, match='[Ss]ky_or_pixel must be'):
+            self.image.get_viewport(sky_or_pixel='not a valid value')
+
+    def test_set_get_viewport_errors_because_no_wcs(self, data):
+        # Check that errors are raised when they should be when calling
+        # get_viewport when no WCS is present.
+
+        # Load the data without a WCS
+        self.image.load_image(data, image_label='test')
+
+        # Set the viewport with a SkyCoord center
+        with pytest.raises(TypeError, match='Center must be a tuple'):
+            self.image.set_viewport(center=SkyCoord(ra=10, dec=20, unit='deg'), image_label='test')
+
+        # Set the viewport with a Quantity fov
+        with pytest.raises(TypeError, match='FOV must be a float'):
+            self.image.set_viewport(fov=100 * u.arcmin, image_label='test')
+
+        # Try getting the viewport as sky
+        with pytest.raises(ValueError, match='WCS is not set'):
+            self.image.get_viewport(image_label='test', sky_or_pixel='sky')
+
+    @pytest.mark.parametrize("world", [True, False])
+    def test_viewport_is_defined_after_loading_image(self, tmp_path, data, wcs, world):
+        # Check that the viewport is set to a default value when an image
+        # is loaded, even if no viewport is explicitly set.
+
+        # Load the image from FITS to ensure that at least one image with WCS
+        # has been loaded from FITS.
+        wcs = wcs if world else None
+        ccd = CCDData(data=data, unit="adu", wcs=wcs)
+
+        ccd_path = tmp_path / 'test.fits'
+        ccd.write(ccd_path)
+        self.image.load_image(ccd_path)
+
+        # Getting the viewport should not fail...
+        vport = self.image.get_viewport()
+
+        assert 'center' in vport
+
+        assert 'fov' in vport
+        assert 'image_label' in vport
+        assert vport['image_label'] is None
+        if world:
+            assert isinstance(vport['center'], SkyCoord)
+            # fov should be a Quantity since WCS is present
+            assert isinstance(vport['fov'], u.Quantity)
+        else:
+            # No world, so center should be a tuple
+            assert isinstance(vport['center'], tuple)
+            # fov should be a float since no WCS
+            assert isinstance(vport['fov'], numbers.Real)
+
+    def test_set_get_viewport_no_image_label(self, data):
+        # If there is only one image, the viewport should be able to be set
+        # and retrieved without an image label.
+
+        # Add an image without an image label
+        self.image.load_image(data)
+
+        # Set the viewport without an image label
+        self.image.set_viewport(center=(10, 10), fov=100)
+
+        # Getting the viewport again should return the same values
+        vport = self.image.get_viewport()
+        assert vport['center'] == (10, 10)
+        assert vport['fov'] == 100
+        assert vport['image_label'] is None
+
+    def test_set_get_viewport_single_label(self, data):
+        # If there is only one image, the viewport should be able to be set
+        # and retrieved without an image label as long as the image
+        # has an image label.
+
+        # Add an image with an image label
+        self.image.load_image(data, image_label='test')
+
+        # Getting the viewport should not fail...
+        vport = self.image.get_viewport()
+        assert 'center' in vport
+        assert 'fov' in vport
+        assert 'image_label' in vport
+        assert vport['image_label'] == 'test'
+
+        # Set the viewport with an image label
+        self.image.set_viewport(center=(10, 10), fov=100)
+
+        # Getting the viewport again should return the same values
+        vport = self.image.get_viewport()
+        assert vport['center'] == (10, 10)
+        assert vport['fov'] == 100
+        assert vport['image_label'] == 'test'
+
+    def test_get_viewport_sky_or_pixel(self, data, wcs):
+        # Check that the viewport can be retrieved in both pixel and world
+        # coordinates, depending on the WCS of the image.
+
+        # Load the data with a WCS
+        self.image.load_image(NDData(data=data, wcs=wcs), image_label='test')
+
+        input_center = SkyCoord(*wcs.wcs.crval, unit='deg')
+        input_fov = 2 * u.arcmin
+        self.image.set_viewport(center=input_center, fov=input_fov, image_label='test')
+
+        # Get the viewport in pixel coordinates
+        vport_pixel = self.image.get_viewport(image_label='test', sky_or_pixel='pixel')
+        # The WCS set up for the tests is 1-based, rather than the usual 0-based,
+        # so we need to subtract 1 from the pixel coordinates.
+        assert all(vport_pixel['center'] == (wcs.wcs.crpix - 1))
+        # tbh, not at all sure what the fov should be in pixel coordinates,
+        # so just check that it is a float.
+        assert isinstance(vport_pixel['fov'], numbers.Real)
+
+        # Get the viewport in world coordinates
+        vport_world = self.image.get_viewport(image_label='test', sky_or_pixel='sky')
+        assert vport_world['center'] == input_center
+        assert vport_world['fov'] == input_fov
+
+    @pytest.mark.parametrize("sky_or_pixel", ['sky', 'pixel'])
+    def test_get_viewport_no_sky_or_pixel(self, data, wcs, sky_or_pixel):
+        # Check that get_viewport returns the correct "default" sky_or_pixel
+        # value when the result ought to be unambiguous.
+        if sky_or_pixel == 'sky':
+            use_wcs = wcs
+        else:
+            use_wcs = None
+
+        self.image.load_image(NDData(data=data, wcs=use_wcs), image_label='test')
+
+        vport = self.image.get_viewport(image_label='test')
+        match sky_or_pixel:
+            case 'sky':
+                assert isinstance(vport['center'], SkyCoord)
+                assert vport['fov'].unit.physical_type == "angle"
+            case 'pixel':
+                assert isinstance(vport['center'], tuple)
+                assert isinstance(vport['fov'], numbers.Real)
+
+    def test_get_viewport_with_wcs_set_pixel_or_world(self, data, wcs):
+        # Check that the viewport can be retrieved in both pixel and world
+        # after setting with the opposite if the WCS is set.
+        # Load the data with a WCS
+        self.image.load_image(NDData(data=data, wcs=wcs), image_label='test')
+
+        # Set the viewport in world coordinates
+        input_center = SkyCoord(*wcs.wcs.crval, unit='deg')
+        input_fov = 2 * u.arcmin
+        self.image.set_viewport(center=input_center, fov=input_fov, image_label='test')
+
+        # Get the viewport in pixel coordinates
+        vport_pixel = self.image.get_viewport(image_label='test', sky_or_pixel='pixel')
+        assert all(vport_pixel['center'] == (wcs.wcs.crpix - 1))
+        assert isinstance(vport_pixel['fov'], numbers.Real)
+
+        # Set the viewport in pixel coordinates
+        input_center_pixel = (wcs.wcs.crpix[0], wcs.wcs.crpix[1])
+        input_fov_pixel = 100  # in pixels
+        self.image.set_viewport(center=input_center_pixel, fov=input_fov_pixel, image_label='test')
+
+        # Get the viewport in world coordinates
+        vport_world = self.image.get_viewport(image_label='test', sky_or_pixel='sky')
+        assert vport_world['center'] == wcs.pixel_to_world(*input_center_pixel)
+        assert isinstance(vport_world['fov'], u.Quantity)
+
+    def test_viewport_round_trips(self, data, wcs):
+        # Check that the viewport retrieved with get can be used to set
+        # the viewport again, and that the values are the same.
+        self.image.load_image(NDData(data=data, wcs=wcs), image_label='test')
+        self.image.set_viewport(center=(10, 10), fov=100, image_label='test')
+        vport = self.image.get_viewport(image_label='test')
+        # Set the viewport again using the values from the get_viewport
+        self.image.set_viewport(**vport)
+        # Get the viewport again and check that the values are the same
+        vport2 = self.image.get_viewport(image_label='test')
+        assert vport2 == vport
 
     def test_set_catalog_style_before_catalog_data_raises_error(self):
         # Make sure that adding a catalog style before adding any catalog
@@ -452,6 +670,51 @@ class ImageWidgetAPITest:
         self.image.set_cuts((10, 100))
         assert isinstance(self.image.get_cuts(), ManualInterval)
         assert self.image.get_cuts().get_limits(data) == (10, 100)
+
+    def test_stretch_cuts_labels(self, data):
+        # Check that stretch and cuts can be set with labels
+        self.image.load_image(data, image_label='test')
+
+        # Set stretch and cuts with labels
+        self.image.set_stretch(LogStretch(), image_label='test')
+        self.image.set_cuts((10, 100), image_label='test')
+
+        # Get stretch and cuts with labels
+        stretch = self.image.get_stretch(image_label='test')
+        cuts = self.image.get_cuts(image_label='test')
+
+        assert isinstance(stretch, LogStretch)
+        assert isinstance(cuts, ManualInterval)
+        assert cuts.get_limits(data) == (10, 100)
+
+    def test_stretch_cuts_are_set_after_loading_image(self, data):
+        # Check that stretch and cuts are set to default values after loading an image
+        self.image.load_image(data, image_label='test')
+
+        stretch = self.image.get_stretch(image_label='test')
+        cuts = self.image.get_cuts(image_label='test')
+
+        # Backends can set whatever stretch and cuts they want, so
+        # we just check that they are instances of the expected classes.
+        assert isinstance(stretch, BaseStretch)
+        assert isinstance(cuts, BaseInterval)
+
+    def test_stretch_cuts_errors(self, data):
+        # Check that errors are raised when trying to get or set stretch or cuts
+        # for an image label that does not exist.
+        self.image.load_image(data, image_label='test')
+
+        with pytest.raises(ValueError, match='[Ii]mage label.*not found'):
+            self.image.get_stretch(image_label='not a valid label')
+
+        with pytest.raises(ValueError, match='[Ii]mage label.*not found'):
+            self.image.get_cuts(image_label='not a valid label')
+
+        with pytest.raises(ValueError, match='[Ii]mage label.*not found'):
+            self.image.set_stretch(LogStretch(), image_label='not a valid label')
+
+        with pytest.raises(ValueError, match='[Ii]mage label.*not found'):
+            self.image.set_cuts((10, 100), image_label='not a valid label')
 
     @pytest.mark.skip(reason="Not clear whether colormap is part of the API")
     def test_colormap(self):

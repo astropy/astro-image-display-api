@@ -26,7 +26,6 @@ class ImageViewerInterface(Protocol):
     # do any checking at all of these types.
     image_width: int
     image_height: int
-    zoom_level: float
     cursor: str
 
     # Allowed locations for cursor display
@@ -36,7 +35,7 @@ class ImageViewerInterface(Protocol):
 
     # Method for loading image data
     @abstractmethod
-    def load_image(self, data: Any) -> None:
+    def load_image(self, data: Any, image_label: str | None = None) -> None:
         """
         Load data into the viewer. At a minimum, this should allow a FITS file
         to be loaded. Viewers may allow additional data types to be loaded, such as
@@ -47,12 +46,19 @@ class ImageViewerInterface(Protocol):
         data : Any
             The data to load. This can be a FITS file, a 2D array,
             or an `astropy.nddata.NDData` object.
+
+        image_label : str, optional
+            The label for the image.
+
+        Notes
+        -----
+        Loading an image should also set the viewport for that image.
         """
         raise NotImplementedError
 
     # Setting and getting image properties
     @abstractmethod
-    def set_cuts(self, cuts: tuple | BaseInterval) -> None:
+    def set_cuts(self, cuts: tuple | BaseInterval, image_label: str | None = None) -> None:
         """
         Set the cuts for the image.
 
@@ -62,13 +68,24 @@ class ImageViewerInterface(Protocol):
             The cuts to set. If a tuple, it should be of the form
             ``(min, max)`` and will be interpreted as a
             `~astropy.visualization.ManualInterval`.
+
+        image_label : str, optional
+            The label of the image to set the cuts for. If not given and there is
+            only one image loaded, the cuts for that image are set.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def get_cuts(self) -> BaseInterval:
+    def get_cuts(self, image_label: str | None = None) -> BaseInterval:
         """
         Get the current cuts for the image.
+
+        Parameters
+        ----------
+        image_label : str, optional
+            The label of the image to get the cuts for. If not given and there is
+            only one image loaded, the cuts for that image are returned. If there are
+            multiple images and no label is provided, an error is raised.
 
         Returns
         -------
@@ -78,7 +95,7 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def set_stretch(self, stretch: BaseStretch) -> None:
+    def set_stretch(self, stretch: BaseStretch, image_label: str | None = None) -> None:
         """
         Set the stretch for the image.
 
@@ -87,13 +104,24 @@ class ImageViewerInterface(Protocol):
         stretch : Any stretch from `~astropy.visualization`
             The stretch to set. This can be any subclass of
             `~astropy.visualization.BaseStretch`.
+
+        image_label : str, optional
+            The label of the image to set the cuts for. If not given and there is
+            only one image loaded, the cuts for that image are set.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def get_stretch(self) -> BaseStretch:
+    def get_stretch(self, image_label: str | None = None) -> BaseStretch:
         """
         Get the current stretch for the image.
+
+        Parameters
+        ----------
+        image_label : str, optional
+            The label of the image to get the cuts for. If not given and there is
+            only one image loaded, the cuts for that image are returned. If there are
+            multiple images and no label is provided, an error is raised.
 
         Returns
         -------
@@ -264,42 +292,73 @@ class ImageViewerInterface(Protocol):
 
     # Methods that modify the view
     @abstractmethod
-    def center_on(self, point: tuple | SkyCoord):
+    def set_viewport(
+        self, center: SkyCoord | tuple[float, float] | None = None,
+        fov: Quantity | float | None = None,
+        image_label: str | None = None
+    ) -> None:
         """
-        Center the view on the point.
+        Set the viewport of the image, which defines the center and field of view.
 
         Parameters
         ----------
-        tuple or `~astropy.coordinates.SkyCoord`
-            If tuple of ``(X, Y)`` is given, it is assumed
-            to be in data coordinates.
+        center : `astropy.coordinates.SkyCoord` or tuple of float, optional
+            The center of the viewport. If not given, the current center is used.
+        fov : `astropy.units.Quantity` or float, optional
+            The field of view (FOV) of the viewport. If not given, the current FOV
+            is used. If a float is given, it is interpreted a size in pixels. For images that are
+            not square, the FOV is interpreted as the size of the longer side of the image.
+        image_label : str, optional
+            The label of the image to set the viewport for. If not given and there is
+            only one image loaded, the viewport for that image is set. If there are
+            multiple images and no label is provided, an error is raised.
+
+        Raises
+        ------
+        TypeError
+            If the `center` is not a `SkyCoord` object or a tuple of floats, or if
+            the `fov` is not a angular `Quantity` or a float, or if there is no WCS
+            and the center or field of view require a WCS to be applied.
+
+        ValueError
+            If `image_label` is not provided when there are multiple images loaded.
+
+        `astropy.units.UnitTypeError`
+            If the `fov` is a `Quantity` but does not have an angular unit.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def offset_by(self, dx: float | Quantity, dy: float | Quantity) -> None:
+    def get_viewport(self, sky_or_pixel: str | None = None, image_label: str | None = None) -> dict[str, Any]:
         """
-        Move the center to a point that is given offset
-        away from the current center.
+        Get the current viewport of the image.
 
         Parameters
         ----------
-        dx, dy : float or `~astropy.units.Quantity`
-            Offset value. Without a unit, assumed to be pixel offsets.
-            If a unit is attached, offset by pixel or sky is assumed from
-            the unit.
-        """
-        raise NotImplementedError
+        sky_or_pixel : str, optional
+            If 'sky', the center will be returned as a `SkyCoord` object.
+            If 'pixel', the center will be returned as a tuple of pixel coordinates.
+            If `None`, the default behavior is to return the center as a `SkyCoord` if
+            possible, or as a tuple of floats if the image is in pixel coordinates and has
+            no WCS information.
+        image_label : str, optional
+            The label of the image to get the viewport for. If not given and there is only one
+            image loaded, the viewport for that image is returned. If there are multiple images
+            and no label is provided, an error is raised.
 
-    @abstractmethod
-    def zoom(self, val: float) -> None:
-        """
-        Zoom in or out by the given factor.
+        Returns
+        -------
+        dict
+            A dictionary containing the current viewport settings.
+            The keys are 'center', 'fov', and 'image_label'.
+            - 'center' is an `astropy.coordinates.SkyCoord` object or a tuple of floats.
+            - 'fov' is an `astropy.units.Quantity` object or a float.
+            - 'image_label' is a string representing the label of the image.
 
-        Parameters
-        ----------
-        val : float
-            The zoom level to zoom the image.
-            See `zoom_level`.
+        Raises
+        -------
+        ValueError
+            If the `sky_or_pixel` parameter is not one of 'sky', 'pixel', or `None`, or if
+            the `image_label` is not provided when there are multiple images loaded.
         """
         raise NotImplementedError
