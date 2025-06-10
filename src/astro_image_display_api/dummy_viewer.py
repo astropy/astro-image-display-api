@@ -308,7 +308,7 @@ class ImageViewer:
         """
         return int(shape[1] > shape[0])
 
-    def _intialize_image_viewport_stretch_cuts(
+    def _initialize_image_viewport_stretch_cuts(
         self,
         image_data: ArrayLike | NDData | CCDData,
         image_label: str | None,
@@ -357,7 +357,7 @@ class ImageViewer:
     def _load_fits(self, file: str | os.PathLike, image_label: str | None) -> None:
         ccd = CCDData.read(file)
         self._images[image_label].wcs = ccd.wcs
-        self._intialize_image_viewport_stretch_cuts(ccd.data, image_label)
+        self._initialize_image_viewport_stretch_cuts(ccd.data, image_label)
 
     def _load_array(self, array: ArrayLike, image_label: str | None) -> None:
         """
@@ -370,7 +370,7 @@ class ImageViewer:
         """
         self._images[image_label].wcs = None  # No WCS for raw arrays
         self._images[image_label].largest_dimension = self._determine_largest_dimension(array.shape)
-        self._intialize_image_viewport_stretch_cuts(array, image_label)
+        self._initialize_image_viewport_stretch_cuts(array, image_label)
 
     def _load_nddata(self, data: NDData, image_label: str | None) -> None:
         """
@@ -384,7 +384,7 @@ class ImageViewer:
         self._images[image_label].wcs = data.wcs
         self._images[image_label].largest_dimension = self._determine_largest_dimension(data.data.shape)
         # Not all NDDData objects have a shape, apparently
-        self._intialize_image_viewport_stretch_cuts(data.data, image_label)
+        self._initialize_image_viewport_stretch_cuts(data.data, image_label)
 
     def _load_asdf(self, asdf_file: str | os.PathLike, image_label: str | None) -> None:
         """
