@@ -10,7 +10,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.nddata import CCDData, NDData
 from astropy.table import Table, vstack
-from astropy.units import Quantity, get_physical_type
+from astropy.units import Quantity
 from astropy.wcs import WCS
 from astropy.wcs.utils import proj_plane_pixel_scales
 from astropy.visualization import AsymmetricPercentileInterval, BaseInterval, BaseStretch, LinearStretch, ManualInterval
@@ -37,6 +37,7 @@ class ViewportInfo:
     largest_dimension: int | None = None
     stretch: BaseStretch | None = None
     cuts: BaseInterval | tuple[numbers.Real, numbers.Real] | None = None
+    colormap: str | None = None
 
 @dataclass
 class ImageViewer:
@@ -57,6 +58,9 @@ class ImageViewer:
 
     # Allowed locations for cursor display
     ALLOWED_CURSOR_LOCATIONS: tuple = ImageViewerInterface.ALLOWED_CURSOR_LOCATIONS
+
+    # Minimal required colormaps
+    MINIMUM_REQUIRED_COLORMAPS: tuple[str, ...] = ImageViewerInterface.MINIMUM_REQUIRED_COLORMAPS
 
     # some internal variable for keeping track of viewer state
     _wcs: WCS | None = None
@@ -149,6 +153,30 @@ class ImageViewer:
         if image_label not in self._images:
             raise ValueError(f"Image label '{image_label}' not found. Please load an image first.")
         self._images[image_label].cuts = self._cuts
+
+    @property
+    def colormap_options(self) -> list[str]:
+        return list(self.MINIMUM_REQUIRED_COLORMAPS)
+    colormap_options.__doc__ = ImageViewerInterface.colormap_options.__doc__
+
+    def set_colormap(self, map_name: str, image_label: str | None = None) -> None:
+        if map_name not in self.colormap_options:
+            raise ValueError(f"Invalid colormap '{map_name}'. Must be one of {self.colormap_options}.")
+
+        image_label = self._resolve_image_label(image_label)
+        if image_label not in self._images:
+            raise ValueError(f"Image label '{image_label}' not found. Please load an image first.")
+        self._images[image_label].colormap = map_name
+
+    set_colormap.__doc__ = ImageViewerInterface.set_colormap.__doc__
+
+    def get_colormap(self, image_label: str | None = None) -> str:
+        image_label = self._resolve_image_label(image_label)
+        if image_label not in self._images:
+            raise ValueError(f"Image label '{image_label}' not found. Please load an image first.")
+        return self._images[image_label].colormap
+
+    get_colormap.__doc__ = ImageViewerInterface.get_colormap.__doc__
 
     @property
     def cursor(self) -> str:
