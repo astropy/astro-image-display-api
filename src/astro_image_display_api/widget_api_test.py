@@ -7,10 +7,12 @@ import numpy as np
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.nddata import CCDData, NDData
-from astropy.table import Table, vstack
+from astropy.table import Table
 from astropy import units as u
 from astropy.wcs import WCS
 from astropy.visualization import AsymmetricPercentileInterval, BaseInterval, BaseStretch, LogStretch, ManualInterval
+
+from .interface_definition import ImageViewerInterface
 
 __all__ = ['ImageWidgetAPITest']
 
@@ -716,15 +718,48 @@ class ImageWidgetAPITest:
         with pytest.raises(ValueError, match='[Ii]mage label.*not found'):
             self.image.set_cuts((10, 100), image_label='not a valid label')
 
-    @pytest.mark.skip(reason="Not clear whether colormap is part of the API")
-    def test_colormap(self):
-        cmap_desired = 'gray'
+    def test_colormap_options(self):
         cmap_list = self.image.colormap_options
-        assert len(cmap_list) > 0 and cmap_desired in cmap_list
+        assert set(ImageViewerInterface.MINIMUM_REQUIRED_COLORMAPS) <= set(cmap_list)
+        assert set(self.image.MINIMUM_REQUIRED_COLORMAPS) == set(ImageViewerInterface.MINIMUM_REQUIRED_COLORMAPS)
+
+    def test_set_get_colormap(self, data):
+        # Check setting and getting with a single image label.
+        self.image.load_image(data, image_label='test')
+        cmap_desired = 'gray'
         self.image.set_colormap(cmap_desired)
+        assert self.image.get_colormap() == cmap_desired
+
+        # Check that the colormap can be set with an image label
+        new_cmap = "viridis"
+        self.image.set_colormap(new_cmap, image_label='test')
+        assert self.image.get_colormap(image_label='test') == new_cmap
+
+    def test_set_colormap_errors(self, data):
+        # Check that setting a colormap raises an error if the colormap
+        # is not in the list of allowed colormaps.
+        self.image.load_image(data, image_label='test')
+
+        with pytest.raises(ValueError, match='[Ii]nvalid colormap'):
+            self.image.set_colormap('not a valid colormap')
+
+        # Check that getting a colormap for an image label that does not exist
+        with pytest.raises(ValueError, match='[Ii]mage label.*not found'):
+            self.image.get_colormap(image_label='not a valid label')
+
+        # Check that setting a colormap without an image label fails
+        # when there is more than one image label
+        self.image.load_image(data, image_label='another test')
+        with pytest.raises(ValueError, match='Multiple image labels defined'):
+            self.image.set_colormap('gray')
+
+        # Same for getting the colormap without an image label
+        with pytest.raises(ValueError, match='Multiple image labels defined'):
+            self.image.get_colormap()
 
     def test_cursor(self):
         assert self.image.cursor in self.image.ALLOWED_CURSOR_LOCATIONS
+        assert set(ImageViewerInterface.ALLOWED_CURSOR_LOCATIONS) == set(self.image.ALLOWED_CURSOR_LOCATIONS)
         with pytest.raises(self.cursor_error_classes):
             self.image.cursor = 'not a valid option'
         self.image.cursor = 'bottom'

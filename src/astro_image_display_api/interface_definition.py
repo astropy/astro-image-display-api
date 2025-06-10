@@ -12,7 +12,23 @@ from numpy.typing import ArrayLike
 
 # Allowed locations for cursor display
 ALLOWED_CURSOR_LOCATIONS = ('top', 'bottom', None)
-
+MINIMUM_REQUIRED_COLORMAPS = (
+    'gray',
+    'viridis',
+    'plasma',
+    'inferno',
+    'magma',
+    'purple-blue',
+    'yellow-green-blue',
+    'yellow-orange-red',
+    'red-purple',
+    'blue-green',
+    'hot',
+    'red-blue',
+    'red-yellow-blue',
+    'purple-orange'
+    'purple-green',
+)
 
 __all__ = [
     'ImageViewerInterface',
@@ -30,6 +46,9 @@ class ImageViewerInterface(Protocol):
 
     # Allowed locations for cursor display
     ALLOWED_CURSOR_LOCATIONS: tuple = ALLOWED_CURSOR_LOCATIONS
+
+    # Required colormaps for the viewer
+    MINIMUM_REQUIRED_COLORMAPS: tuple[str, ...] = MINIMUM_REQUIRED_COLORMAPS
 
     # The methods, grouped loosely by purpose
 
@@ -127,6 +146,69 @@ class ImageViewerInterface(Protocol):
         -------
         stretch : `~astropy.visualization.BaseStretch`
             The Astropy stretch object representing the current stretch.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_colormap(self, map_name: str, image_label: str | None = None) -> None:
+        """
+        Set the colormap for the image specified by image_label.
+
+        Parameters
+        ----------
+        map_name : str
+            The name of the colormap to set. This should be a valid
+            colormap name from Matplotlib; not all backends will support
+            all colormaps, so the viewer should handle errors gracefully.
+            The case of the `map_name` is not important.
+        image_label : str, optional
+            The label of the image to set the colormap for. If not given and there is
+            only one image loaded, the colormap for that image is set. If there are
+            multiple images and no label is provided, an error is raised.
+
+        Raises
+        ------
+        ValueError
+            If the `map_name` is not a valid colormap name or if the `image_label`
+            is not provided when there are multiple images loaded.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_colormap(self, image_label: str | None = None) -> str:
+        """
+        Get the current colormap for the image.
+
+        Parameters
+        ----------
+        image_label : str, optional
+            The label of the image to get the colormap for. If not given and there is
+            only one image loaded, the colormap for that image is returned. If there are
+            multiple images and no label is provided, an error is raised.
+
+        Returns
+        -------
+        map_name : str
+            The name of the current colormap.
+
+        Raises
+        ------
+        ValueError
+            If the `image_label` is not provided when there are multiple images loaded or if
+            the `image_label` does not correspond to a loaded image.
+        """
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def colormap_options(self) -> list[str]:
+        """
+        Get the list of available colormaps.
+
+        Returns
+        -------
+        list of str
+            A list of available colormap names.
         """
         raise NotImplementedError
 
