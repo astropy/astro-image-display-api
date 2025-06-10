@@ -26,7 +26,7 @@ MINIMUM_REQUIRED_COLORMAPS = (
     'hot',
     'red-blue',
     'red-yellow-blue',
-    'purple-orange'
+    'purple-orange',
     'purple-green',
 )
 
