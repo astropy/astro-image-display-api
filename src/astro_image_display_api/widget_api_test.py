@@ -735,6 +735,19 @@ class ImageWidgetAPITest:
         self.image.set_colormap(new_cmap, image_label='test')
         assert self.image.get_colormap(image_label='test') == new_cmap
 
+    def test_set_get_colormap_map_name_case_insensitive(self, data):
+        # Check that the colormap can be set with a name that is not
+        # case-sensitive.
+        self.image.load_image(data, image_label='test')
+        cmap_desired = 'GrAy'
+        self.image.set_colormap(cmap_desired)
+        assert self.image.get_colormap() == cmap_desired.lower()
+
+        # Set the colormap with a different case
+        new_cmap = "Viridis"
+        self.image.set_colormap(new_cmap, image_label='test')
+        assert self.image.get_colormap(image_label='test') == 'viridis'
+
     def test_set_colormap_errors(self, data):
         # Check that setting a colormap raises an error if the colormap
         # is not in the list of allowed colormaps.
