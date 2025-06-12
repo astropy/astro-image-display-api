@@ -59,9 +59,6 @@ class ImageViewer:
     # Allowed locations for cursor display
     ALLOWED_CURSOR_LOCATIONS: tuple = ImageViewerInterface.ALLOWED_CURSOR_LOCATIONS
 
-    # Minimal required colormaps
-    MINIMUM_REQUIRED_COLORMAPS: tuple[str, ...] = ImageViewerInterface.MINIMUM_REQUIRED_COLORMAPS
-
     # some internal variable for keeping track of viewer state
     _wcs: WCS | None = None
     _center: tuple[numbers.Real, numbers.Real] = (0.0, 0.0)
@@ -154,15 +151,7 @@ class ImageViewer:
             raise ValueError(f"Image label '{image_label}' not found. Please load an image first.")
         self._images[image_label].cuts = self._cuts
 
-    @property
-    def colormap_options(self) -> list[str]:
-        return list(self.MINIMUM_REQUIRED_COLORMAPS)
-    colormap_options.__doc__ = ImageViewerInterface.colormap_options.__doc__
-
     def set_colormap(self, map_name: str, image_label: str | None = None) -> None:
-        if map_name.lower() not in self.colormap_options:
-            raise ValueError(f"Invalid colormap '{map_name}'. Must be one of {self.colormap_options}.")
-
         image_label = self._resolve_image_label(image_label)
         if image_label not in self._images:
             raise ValueError(f"Image label '{image_label}' not found. Please load an image first.")

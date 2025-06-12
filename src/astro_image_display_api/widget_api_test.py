@@ -718,11 +718,6 @@ class ImageWidgetAPITest:
         with pytest.raises(ValueError, match='[Ii]mage label.*not found'):
             self.image.set_cuts((10, 100), image_label='not a valid label')
 
-    def test_colormap_options(self):
-        cmap_list = self.image.colormap_options
-        assert set(ImageViewerInterface.MINIMUM_REQUIRED_COLORMAPS) <= set(cmap_list)
-        assert set(self.image.MINIMUM_REQUIRED_COLORMAPS) == set(ImageViewerInterface.MINIMUM_REQUIRED_COLORMAPS)
-
     def test_set_get_colormap(self, data):
         # Check setting and getting with a single image label.
         self.image.load_image(data, image_label='test')
@@ -752,9 +747,6 @@ class ImageWidgetAPITest:
         # Check that setting a colormap raises an error if the colormap
         # is not in the list of allowed colormaps.
         self.image.load_image(data, image_label='test')
-
-        with pytest.raises(ValueError, match='[Ii]nvalid colormap'):
-            self.image.set_colormap('not a valid colormap')
 
         # Check that getting a colormap for an image label that does not exist
         with pytest.raises(ValueError, match='[Ii]mage label.*not found'):
