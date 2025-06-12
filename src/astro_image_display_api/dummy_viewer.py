@@ -155,7 +155,7 @@ class ImageViewer:
         image_label = self._resolve_image_label(image_label)
         if image_label not in self._images:
             raise ValueError(f"Image label '{image_label}' not found. Please load an image first.")
-        self._images[image_label].colormap = map_name.lower()
+        self._images[image_label].colormap = map_name
 
     set_colormap.__doc__ = ImageViewerInterface.set_colormap.__doc__
 
