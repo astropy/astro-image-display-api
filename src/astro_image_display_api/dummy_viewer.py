@@ -10,7 +10,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.nddata import CCDData, NDData
 from astropy.table import Table, vstack
-from astropy.units import Quantity, get_physical_type
+from astropy.units import Quantity
 from astropy.wcs import WCS
 from astropy.wcs.utils import proj_plane_pixel_scales
 from astropy.visualization import AsymmetricPercentileInterval, BaseInterval, BaseStretch, LinearStretch, ManualInterval
@@ -37,6 +37,7 @@ class ViewportInfo:
     largest_dimension: int | None = None
     stretch: BaseStretch | None = None
     cuts: BaseInterval | tuple[numbers.Real, numbers.Real] | None = None
+    colormap: str | None = None
 
 @dataclass
 class ImageViewer:
@@ -149,6 +150,22 @@ class ImageViewer:
         if image_label not in self._images:
             raise ValueError(f"Image label '{image_label}' not found. Please load an image first.")
         self._images[image_label].cuts = self._cuts
+
+    def set_colormap(self, map_name: str, image_label: str | None = None) -> None:
+        image_label = self._resolve_image_label(image_label)
+        if image_label not in self._images:
+            raise ValueError(f"Image label '{image_label}' not found. Please load an image first.")
+        self._images[image_label].colormap = map_name
+
+    set_colormap.__doc__ = ImageViewerInterface.set_colormap.__doc__
+
+    def get_colormap(self, image_label: str | None = None) -> str:
+        image_label = self._resolve_image_label(image_label)
+        if image_label not in self._images:
+            raise ValueError(f"Image label '{image_label}' not found. Please load an image first.")
+        return self._images[image_label].colormap
+
+    get_colormap.__doc__ = ImageViewerInterface.get_colormap.__doc__
 
     @property
     def cursor(self) -> str:
