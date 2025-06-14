@@ -320,7 +320,7 @@ class ImageViewerInterface(Protocol):
             The name of the catalog. If not given and there is
             only one catalog loaded, the style for that catalog is returned.
             If there are multiple catalogs and no label is provided, an error
-            is raised. If the label is does not correspond to a loaded
+            is raised. If the label does not correspond to a loaded
             catalog, an empty dictionary is returned.
 
         Returns
