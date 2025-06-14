@@ -1,5 +1,6 @@
 from typing import Protocol, runtime_checkable, Any
 from abc import abstractmethod
+import numbers
 import os
 
 from astropy.coordinates import SkyCoord
@@ -55,7 +56,7 @@ class ImageViewerInterface(Protocol):
 
     # Setting and getting image properties
     @abstractmethod
-    def set_cuts(self, cuts: tuple | BaseInterval, image_label: str | None = None) -> None:
+    def set_cuts(self, cuts: tuple[numbers.Real, numbers.Real] | BaseInterval, image_label: str | None = None) -> None:
         """
         Set the cuts for the image.
 
