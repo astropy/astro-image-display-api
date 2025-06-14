@@ -320,7 +320,7 @@ class ImageViewerInterface(Protocol):
             The name of the catalog. If not given and there is
             only one catalog loaded, the style for that catalog is returned.
             If there are multiple catalogs and no label is provided, an error
-            is raised. If the label is not does not correspond to a loaded
+            is raised. If the label is does not correspond to a loaded
             catalog, an empty dictionary is returned.
 
         Returns
@@ -339,7 +339,7 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def remove_catalog(self, catalog_label: str | list[str] | None = None) -> None:
+    def remove_catalog(self, catalog_label: str | None = None) -> None:
         """
         Remove markers from the image.
 
@@ -356,6 +356,10 @@ class ImageViewerInterface(Protocol):
             If the `catalog_label` is not provided when there are multiple
             catalogs loaded, or if the `catalog_label` does not correspond to a
             loaded catalog.
+
+        TypeError
+            If the `catalog_label` is not a string or `None`, or if it is not
+            one of the allowed values.
         """
         raise NotImplementedError
 
