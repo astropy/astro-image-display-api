@@ -616,7 +616,7 @@ class ImageWidgetAPITest:
         self.image.load_catalog(tab, catalog_label='test2', use_skycoord=False)
 
         with pytest.raises(
-            ValueError,
+            TypeError,
             match='Cannot remove multiple catalogs from a list'
         ):
             self.image.remove_catalog(catalog_label=['test1', 'test2'])
@@ -646,7 +646,7 @@ class ImageWidgetAPITest:
     def test_stretch(self):
         original_stretch = self.image.get_stretch()
 
-        with pytest.raises(ValueError, match=r'Stretch.*not valid.*'):
+        with pytest.raises(TypeError, match=r'Stretch.*not valid.*'):
             self.image.set_stretch('not a valid value')
 
         # A bad value should leave the stretch unchanged
@@ -658,10 +658,10 @@ class ImageWidgetAPITest:
         assert isinstance(self.image.get_stretch(), LogStretch)
 
     def test_cuts(self, data):
-        with pytest.raises(ValueError, match='[mM]ust be'):
+        with pytest.raises(TypeError, match='[mM]ust be'):
             self.image.set_cuts('not a valid value')
 
-        with pytest.raises(ValueError, match='[mM]ust be'):
+        with pytest.raises(TypeError, match='[mM]ust be'):
             self.image.set_cuts((1, 10, 100))
 
         # Setting using histogram requires data
