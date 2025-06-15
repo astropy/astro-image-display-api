@@ -127,7 +127,7 @@ class ImageViewer:
 
     def set_stretch(self, value: BaseStretch, image_label: str | None = None) -> None:
         if not isinstance(value, BaseStretch):
-            raise ValueError(f"Stretch option {value} is not valid. Must be an Astropy.visualization Stretch object.")
+            raise TypeError(f"Stretch option {value} is not valid. Must be an Astropy.visualization Stretch object.")
         image_label = self._resolve_image_label(image_label)
         if image_label not in self._images:
             raise ValueError(f"Image label '{image_label}' not found. Please load an image first.")
@@ -145,7 +145,7 @@ class ImageViewer:
         elif isinstance(value, BaseInterval):
             self._cuts = value
         else:
-            raise ValueError("Cuts must be an Astropy.visualization Interval object or a tuple of two values.")
+            raise TypeError("Cuts must be an Astropy.visualization Interval object or a tuple of two values.")
         image_label = self._resolve_image_label(image_label)
         if image_label not in self._images:
             raise ValueError(f"Image label '{image_label}' not found. Please load an image first.")
@@ -498,7 +498,7 @@ class ImageViewer:
             then all markers will be removed.
         """
         if isinstance(catalog_label, list):
-            raise ValueError(
+            raise TypeError(
                 "Cannot remove multiple catalogs from a list. Please specify "
                 "a single catalog label or use '*' to remove all catalogs."
             )

@@ -1,5 +1,6 @@
 from typing import Protocol, runtime_checkable, Any
 from abc import abstractmethod
+import numbers
 import os
 
 from astropy.coordinates import SkyCoord
@@ -55,7 +56,7 @@ class ImageViewerInterface(Protocol):
 
     # Setting and getting image properties
     @abstractmethod
-    def set_cuts(self, cuts: tuple | BaseInterval, image_label: str | None = None) -> None:
+    def set_cuts(self, cuts: tuple[numbers.Real, numbers.Real] | BaseInterval, image_label: str | None = None) -> None:
         """
         Set the cuts for the image.
 
@@ -69,6 +70,16 @@ class ImageViewerInterface(Protocol):
         image_label : str, optional
             The label of the image to set the cuts for. If not given and there is
             only one image loaded, the cuts for that image are set.
+
+        Raises
+        ------
+        TypeError
+            If the `cuts` parameter is not a tuple or an `astropy.visualization.BaseInterval`
+            object.
+
+        ValueError
+            If the `image_label` is not provided when there are multiple images loaded,
+            or if the `image_label` does not correspond to a loaded image.
         """
         raise NotImplementedError
 
@@ -88,6 +99,12 @@ class ImageViewerInterface(Protocol):
         -------
         cuts : `~astropy.visualization.BaseInterval`
             The Astropy interval object representing the current cuts.
+
+        Raises
+        ------
+        ValueError
+            If the `image_label` is not provided when there are multiple images loaded,
+            or if the `image_label` does not correspond to a loaded image.
         """
         raise NotImplementedError
 
@@ -103,8 +120,17 @@ class ImageViewerInterface(Protocol):
             `~astropy.visualization.BaseStretch`.
 
         image_label : str, optional
-            The label of the image to set the cuts for. If not given and there is
-            only one image loaded, the cuts for that image are set.
+            The label of the image to set the stretch for. If not given and there is
+            only one image loaded, the stretch for that image are set.
+
+        Raises
+        ------
+        TypeError
+            If the `stretch` is not a valid `BaseStretch` object
+
+        ValueError
+            if the `image_label` is not provided when there are multiple images loaded
+            or if the `image_label` does not correspond to a loaded image.
         """
         raise NotImplementedError
 
@@ -194,6 +220,11 @@ class ImageViewerInterface(Protocol):
         overwrite : bool, optional
             If `True`, overwrite the file if it exists. Default is
             `False`.
+
+        Raises
+        ------
+        FileExistsError
+            If the file already exists and `overwrite` is `False`.
         """
         raise NotImplementedError
 
@@ -229,6 +260,13 @@ class ImageViewerInterface(Protocol):
             A dictionary that specifies the style of the markers used to
             represent the catalog. See `ImageViewerInterface.set_catalog_style`
             for details.
+
+        Raises
+        ------
+        ValueError
+            If the `table` does not contain the required columns, or if
+            the `catalog_label` is not provided when there are multiple
+            catalogs loaded.
         """
         raise NotImplementedError
 
@@ -262,6 +300,13 @@ class ImageViewerInterface(Protocol):
         -----
         The following shapes are supported: "circle", "square", "crosshair", "plus",
         "diamond".
+
+        Raises
+        ------
+        ValueError
+            If there are multiple catalog styles set and the user has not
+            specified a `catalog_label` for which to set the style, or if
+            an style is set for a catalog that does not exist.
         """
         raise NotImplementedError
 
@@ -269,6 +314,15 @@ class ImageViewerInterface(Protocol):
     def get_catalog_style(self, catalog_label: str | None = None) -> dict:
         """
         Get the style of the catalog markers.
+
+        Parameters
+        ----------
+        catalog_label : str, optional
+            The name of the catalog. If not given and there is
+            only one catalog loaded, the style for that catalog is returned.
+            If there are multiple catalogs and no label is provided, an error
+            is raised. If the label does not correspond to a loaded
+            catalog, an empty dictionary is returned.
 
         Returns
         -------
@@ -281,26 +335,39 @@ class ImageViewerInterface(Protocol):
         ValueError
             If there are multiple catalog styles set and the user has not
             specified a `catalog_label` for which to get the style.
+
         """
         raise NotImplementedError
 
     @abstractmethod
-    def remove_catalog(self, catalog_label: str | list[str] | None = None) -> None:
+    def remove_catalog(self, catalog_label: str | None = None) -> None:
         """
         Remove markers from the image.
 
         Parameters
         ----------
         catalog_label : str, optional
-            The name of the marker set to remove. If the value is ``"all"``,
-            then all markers will be removed.
+            The name of the catalog to remove. The value ``'*'`` can be used to
+            remove all catalogs. If not given and there is
+            only one catalog loaded, that catalog is removed.
+
+        Raises
+        ------
+        ValueError
+            If the `catalog_label` is not provided when there are multiple
+            catalogs loaded, or if the `catalog_label` does not correspond to a
+            loaded catalog.
+
+        TypeError
+            If the `catalog_label` is not a string or `None`, or if it is not
+            one of the allowed values.
         """
         raise NotImplementedError
 
     @abstractmethod
     def get_catalog(self, x_colname: str = 'x', y_colname: str = 'y',
                     skycoord_colname: str = 'coord',
-                    catalog_label: str | list[str] | None = None) -> Table:
+                    catalog_label: str | None = None) -> Table:
         """
         Get the marker positions.
 
@@ -315,15 +382,19 @@ class ImageViewerInterface(Protocol):
         skycoord_colname : str, optional
             The name of the column containing the sky coordinates. Default
             is ``'coord'``.
-        catalog_label : str or list of str, optional
-            The name of the marker set to use. If that value is ``"all"``,
-            then all markers will be returned.
+        catalog_label : str, optional
+            The name of the catalog set to get.
 
         Returns
         -------
         table : `astropy.table.Table`
             The table containing the marker positions. If no markers match the
             ``catalog_label`` parameter, an empty table is returned.
+
+        Raises
+        ------
+        ValueError
+            If the `catalog_label` is not provided when there are multiple catalogs loaded.
         """
         raise NotImplementedError
 
@@ -408,6 +479,7 @@ class ImageViewerInterface(Protocol):
         -------
         ValueError
             If the `sky_or_pixel` parameter is not one of 'sky', 'pixel', or `None`, or if
-            the `image_label` is not provided when there are multiple images loaded.
+            the `image_label` is not provided when there are multiple images loaded, or if
+            the `image_label` does not correspond to a loaded image.
         """
         raise NotImplementedError
