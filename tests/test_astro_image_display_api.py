@@ -24,9 +24,12 @@ def test_api_test_class_completeness():
         attr_present.append(f"{image_viewer_name}.{attr}" in widget_api_test_content)
 
     missing_attributes = [
-        attr for attr, present in zip(required_attributes, attr_present) if not present
+        attr
+        for attr, present in zip(required_attributes, attr_present, strict=False)
+        if not present
     ]
     missing_attributes_msg = "\n".join(missing_attributes)
-    assert all(
-        attr_present
-    ), f"ImageWidgetAPITest does not access these attributes/methods:\n{missing_attributes_msg}\n"
+    assert all(attr_present), (
+        "ImageWidgetAPITest does not access these "
+        f"attributes/methods:\n{missing_attributes_msg}\n"
+    )

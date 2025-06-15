@@ -1,15 +1,12 @@
 import numbers
 
-import pytest
-
 import numpy as np
-
+import pytest
+from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.nddata import CCDData, NDData
 from astropy.table import Table
-from astropy import units as u
-from astropy.wcs import WCS
 from astropy.visualization import (
     AsymmetricPercentileInterval,
     BaseInterval,
@@ -17,6 +14,7 @@ from astropy.visualization import (
     LogStretch,
     ManualInterval,
 )
+from astropy.wcs import WCS
 
 from .interface_definition import ImageViewerInterface
 
@@ -49,7 +47,7 @@ class ImageWidgetAPITest:
         return w
 
     @pytest.fixture
-    def catalog(self, setup: None, wcs: WCS) -> Table:
+    def catalog(self, wcs: WCS) -> Table:
         """
         A catalog fixture that returns an empty table with the
         expected columns.
@@ -177,7 +175,8 @@ class ImageWidgetAPITest:
                 center=(10, 10), fov=100, image_label="not a valid label"
             )
 
-        # Getting a viewport for an image_label that does not exist should raise an error
+        # Getting a viewport for an image_label that does not exist should
+        # raise an error
         with pytest.raises(ValueError, match="[Ii]mage label.*not found"):
             self.image.get_viewport(image_label="not a valid label")
 
@@ -464,7 +463,7 @@ class ImageWidgetAPITest:
             retrieved_catalog = self.image.get_catalog(catalog_label=catalog_label)
             assert (retrieved_catalog == catalog).all()
 
-    def test_load_catalog_does_not_modify_input_catalog(self, catalog, data):
+    def test_load_catalog_does_not_modify_input_catalog(self, catalog):
         # Adding a catalog should not modify the input data table.
         orig_tab = catalog.copy()
         self.image.load_catalog(catalog)

@@ -11,8 +11,6 @@ from astropy.coordinates import SkyCoord
 from astropy.nddata import CCDData, NDData
 from astropy.table import Table, vstack
 from astropy.units import Quantity
-from astropy.wcs import WCS
-from astropy.wcs.utils import proj_plane_pixel_scales
 from astropy.visualization import (
     AsymmetricPercentileInterval,
     BaseInterval,
@@ -20,6 +18,8 @@ from astropy.visualization import (
     LinearStretch,
     ManualInterval,
 )
+from astropy.wcs import WCS
+from astropy.wcs.utils import proj_plane_pixel_scales
 from numpy.typing import ArrayLike
 
 from .interface_definition import ImageViewerInterface
@@ -114,7 +114,8 @@ class ImageViewer:
                     catalog_label = user_keys[0]
                 case _:
                     raise ValueError(
-                        "Multiple catalog styles defined. Please specify a catalog_label to get the style."
+                        "Multiple catalog styles defined. Please specify a "
+                        "catalog_label to get the style."
                     )
 
         return catalog_label
@@ -141,7 +142,8 @@ class ImageViewer:
     def set_stretch(self, value: BaseStretch, image_label: str | None = None) -> None:
         if not isinstance(value, BaseStretch):
             raise TypeError(
-                f"Stretch option {value} is not valid. Must be an Astropy.visualization Stretch object."
+                f"Stretch option {value} is not valid. Must be an "
+                "`astropy.visualization` Stretch object."
             )
         image_label = self._resolve_image_label(image_label)
         if image_label not in self._images:
@@ -169,7 +171,8 @@ class ImageViewer:
             self._cuts = value
         else:
             raise TypeError(
-                "Cuts must be an Astropy.visualization Interval object or a tuple of two values."
+                "Cuts must be an Astropy.visualization Interval object or a tuple "
+                "of two values."
             )
         image_label = self._resolve_image_label(image_label)
         if image_label not in self._images:
@@ -206,7 +209,8 @@ class ImageViewer:
     def cursor(self, value: str) -> None:
         if value not in self.ALLOWED_CURSOR_LOCATIONS:
             raise ValueError(
-                f"Cursor location {value} is not valid. Must be one of {self.ALLOWED_CURSOR_LOCATIONS}."
+                f"Cursor location {value} is not valid. Must be one of "
+                f"{self.ALLOWED_CURSOR_LOCATIONS}."
             )
         self._cursor = value
 
@@ -296,7 +300,8 @@ class ImageViewer:
                     image_label = user_keys[0]
                 case _:
                     raise ValueError(
-                        "Multiple image labels defined. Please specify a image_label to get the style."
+                        "Multiple image labels defined. Please specify a image_label "
+                        "to get the style."
                     )
 
         return image_label
@@ -324,9 +329,9 @@ class ImageViewer:
         if image_label in self._images:
             del self._images[image_label]
 
-        if isinstance(file, (str, os.PathLike)):
+        if isinstance(file, str | os.PathLike):
             if isinstance(file, str):
-                is_adsf = file.endswith(".asdf")
+                is_asdf = file.endswith(".asdf")
             else:
                 is_asdf = file.suffix == ".asdf"
             if is_asdf:
@@ -567,8 +572,8 @@ class ImageViewer:
 
         try:
             del self._catalogs[catalog_label]
-        except KeyError:
-            raise ValueError(f"Catalog label {catalog_label} not found.")
+        except KeyError as err:
+            raise ValueError(f"Catalog label {catalog_label} not found.") from err
 
     def get_catalog(
         self,
@@ -623,11 +628,12 @@ class ImageViewer:
             fov = current_viewport.fov
 
         # If either center or fov is None these checks will raise an appropriate error
-        if not isinstance(center, (SkyCoord, tuple)):
+        if not isinstance(center, SkyCoord | tuple):
             raise TypeError(
-                "Invalid value for center. Center must be a SkyCoord or tuple of (X, Y)."
+                "Invalid value for center. Center must be a SkyCoord or tuple "
+                "of (X, Y)."
             )
-        if not isinstance(fov, (Quantity, numbers.Real)):
+        if not isinstance(fov, Quantity | numbers.Real):
             raise TypeError(
                 "Invalid value for fov. fov must be an angular Quantity or float."
             )
@@ -640,8 +646,9 @@ class ImageViewer:
         # Check that the center and fov are compatible with the current image
         if self._images[image_label].wcs is None:
             if current_viewport.center is not None:
-                # If there is a WCS either input is fine. If there is no WCS then we only
-                # check wther the new center is the same type as the current center.
+                # If there is a WCS either input is fine. If there is no WCS then we
+                # only check wther the new center is the same type as the
+                # current center.
                 if isinstance(center, SkyCoord) and not isinstance(
                     current_viewport.center, SkyCoord
                 ):
@@ -711,7 +718,8 @@ class ImageViewer:
                 # was not already sky, so we need to convert them or fail
                 if viewport.wcs is None:
                     raise ValueError(
-                        "WCS is not set. Cannot convert pixel coordinates to sky coordinates."
+                        "WCS is not set. Cannot convert pixel coordinates to "
+                        "sky coordinates."
                     )
                 else:
                     center = viewport.wcs.pixel_to_world(
@@ -726,7 +734,8 @@ class ImageViewer:
             if isinstance(viewport.center, SkyCoord):
                 if viewport.wcs is None:
                     raise ValueError(
-                        "WCS is not set. Cannot convert sky coordinates to pixel coordinates."
+                        "WCS is not set. Cannot convert sky coordinates to "
+                        "pixel coordinates."
                     )
                 center = viewport.wcs.world_to_pixel(viewport.center)
             else:
