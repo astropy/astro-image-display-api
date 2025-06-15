@@ -120,8 +120,8 @@ class ImageViewerInterface(Protocol):
             `~astropy.visualization.BaseStretch`.
 
         image_label : str, optional
-            The label of the image to set the cuts for. If not given and there is
-            only one image loaded, the cuts for that image are set.
+            The label of the image to set the stretch for. If not given and there is
+            only one image loaded, the stretch for that image are set.
 
         Raises
         ------
@@ -367,7 +367,7 @@ class ImageViewerInterface(Protocol):
     @abstractmethod
     def get_catalog(self, x_colname: str = 'x', y_colname: str = 'y',
                     skycoord_colname: str = 'coord',
-                    catalog_label: str | list[str] | None = None) -> Table:
+                    catalog_label: str | None = None) -> Table:
         """
         Get the marker positions.
 
@@ -382,9 +382,8 @@ class ImageViewerInterface(Protocol):
         skycoord_colname : str, optional
             The name of the column containing the sky coordinates. Default
             is ``'coord'``.
-        catalog_label : str or list of str, optional
-            The name of the marker set to use. If that value is ``"all"``,
-            then all markers will be returned.
+        catalog_label : str, optional
+            The name of the catalog set to get.
 
         Returns
         -------
