@@ -471,7 +471,7 @@ class ImageWidgetAPITest:
         assert (catalog == orig_tab).all()
 
     def test_load_multiple_catalogs(self, catalog):
-        # Load and get mulitple catalogs
+        # Load and get multiple catalogs
         # Add a catalog
         self.image.load_catalog(
             catalog,

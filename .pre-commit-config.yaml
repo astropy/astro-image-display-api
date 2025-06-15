@@ -38,3 +38,9 @@ repos:
     rev: 25.1.0
     hooks:
     -   id: black
+
+# per the documentation this should add codespell spell checking
+- repo: https://github.com/codespell-project/codespell
+  rev: v2.4.1
+  hooks:
+  - id: codespell
