@@ -10,10 +10,10 @@ from astropy.visualization import BaseInterval, BaseStretch
 
 
 # Allowed locations for cursor display
-ALLOWED_CURSOR_LOCATIONS = ('top', 'bottom', None)
+ALLOWED_CURSOR_LOCATIONS = ("top", "bottom", None)
 
 __all__ = [
-    'ImageViewerInterface',
+    "ImageViewerInterface",
 ]
 
 
@@ -56,7 +56,11 @@ class ImageViewerInterface(Protocol):
 
     # Setting and getting image properties
     @abstractmethod
-    def set_cuts(self, cuts: tuple[numbers.Real, numbers.Real] | BaseInterval, image_label: str | None = None) -> None:
+    def set_cuts(
+        self,
+        cuts: tuple[numbers.Real, numbers.Real] | BaseInterval,
+        image_label: str | None = None,
+    ) -> None:
         """
         Set the cuts for the image.
 
@@ -229,10 +233,16 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def load_catalog(self, table: Table, x_colname: str = 'x', y_colname: str = 'y',
-                    skycoord_colname: str = 'coord', use_skycoord: bool = False,
-                    catalog_label: str | None = None,
-                    catalog_style: dict | None = None) -> None:
+    def load_catalog(
+        self,
+        table: Table,
+        x_colname: str = "x",
+        y_colname: str = "y",
+        skycoord_colname: str = "coord",
+        use_skycoord: bool = False,
+        catalog_label: str | None = None,
+        catalog_style: dict | None = None,
+    ) -> None:
         """
         Add catalog entries to the viewer at positions given by the catalog.
 
@@ -274,8 +284,8 @@ class ImageViewerInterface(Protocol):
     def set_catalog_style(
         self,
         catalog_label: str | None = None,
-        shape: str = 'circle',
-        color: str = 'red',
+        shape: str = "circle",
+        color: str = "red",
         size: float = 5.0,
         **kwargs
     ):
@@ -365,9 +375,13 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def get_catalog(self, x_colname: str = 'x', y_colname: str = 'y',
-                    skycoord_colname: str = 'coord',
-                    catalog_label: str | None = None) -> Table:
+    def get_catalog(
+        self,
+        x_colname: str = "x",
+        y_colname: str = "y",
+        skycoord_colname: str = "coord",
+        catalog_label: str | None = None,
+    ) -> Table:
         """
         Get the marker positions.
 
@@ -413,9 +427,10 @@ class ImageViewerInterface(Protocol):
     # Methods that modify the view
     @abstractmethod
     def set_viewport(
-        self, center: SkyCoord | tuple[float, float] | None = None,
+        self,
+        center: SkyCoord | tuple[float, float] | None = None,
         fov: Quantity | float | None = None,
-        image_label: str | None = None
+        image_label: str | None = None,
     ) -> None:
         """
         Set the viewport of the image, which defines the center and field of view.
@@ -449,7 +464,9 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def get_viewport(self, sky_or_pixel: str | None = None, image_label: str | None = None) -> dict[str, Any]:
+    def get_viewport(
+        self, sky_or_pixel: str | None = None, image_label: str | None = None
+    ) -> dict[str, Any]:
         """
         Get the current viewport of the image.
 

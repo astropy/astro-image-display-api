@@ -13,24 +13,34 @@ from astropy.table import Table, vstack
 from astropy.units import Quantity
 from astropy.wcs import WCS
 from astropy.wcs.utils import proj_plane_pixel_scales
-from astropy.visualization import AsymmetricPercentileInterval, BaseInterval, BaseStretch, LinearStretch, ManualInterval
+from astropy.visualization import (
+    AsymmetricPercentileInterval,
+    BaseInterval,
+    BaseStretch,
+    LinearStretch,
+    ManualInterval,
+)
 from numpy.typing import ArrayLike
 
 from .interface_definition import ImageViewerInterface
+
 
 @dataclass
 class CatalogInfo:
     """
     Class to hold information about a catalog.
     """
+
     style: dict[str, Any] = field(default_factory=dict)
     data: Table | None = None
+
 
 @dataclass
 class ViewportInfo:
     """
     Class to hold image and viewport information.
     """
+
     center: SkyCoord | tuple[numbers.Real, numbers.Real] | None = None
     fov: float | Quantity | None = None
     wcs: WCS | None = None
@@ -39,12 +49,14 @@ class ViewportInfo:
     cuts: BaseInterval | tuple[numbers.Real, numbers.Real] | None = None
     colormap: str | None = None
 
+
 @dataclass
 class ImageViewer:
     """
     This viewer does not do anything except making changes to its internal
     state to simulate the behavior of a real viewer.
     """
+
     # These are attributes, not methods. The type annotations are there
     # to make sure Protocol knows they are attributes. Python does not
     # do any checking at all of these types.
@@ -52,7 +64,9 @@ class ImageViewer:
     image_height: int = 0
     zoom_level: float = 1
     _cursor: str = ImageViewerInterface.ALLOWED_CURSOR_LOCATIONS[0]
-    _cuts: BaseInterval | tuple[float, float] = AsymmetricPercentileInterval(upper_percentile=95)
+    _cuts: BaseInterval | tuple[float, float] = AsymmetricPercentileInterval(
+        upper_percentile=95
+    )
     _stretch: BaseStretch = LinearStretch
     # viewer: Any
 
@@ -74,7 +88,6 @@ class ImageViewer:
         self._images[None].center = None
         self._images[None].fov = None
         self._images[None].wcs = None
-
 
     def _user_catalog_labels(self) -> list[str]:
         """
@@ -117,44 +130,60 @@ class ImageViewer:
             "size": 5,
         }
 
-
-
     def get_stretch(self, image_label: str | None = None) -> BaseStretch:
         image_label = self._resolve_image_label(image_label)
         if image_label not in self._images:
-            raise ValueError(f"Image label '{image_label}' not found. Please load an image first.")
+            raise ValueError(
+                f"Image label '{image_label}' not found. Please load an image first."
+            )
         return self._images[image_label].stretch
 
     def set_stretch(self, value: BaseStretch, image_label: str | None = None) -> None:
         if not isinstance(value, BaseStretch):
-            raise TypeError(f"Stretch option {value} is not valid. Must be an Astropy.visualization Stretch object.")
+            raise TypeError(
+                f"Stretch option {value} is not valid. Must be an Astropy.visualization Stretch object."
+            )
         image_label = self._resolve_image_label(image_label)
         if image_label not in self._images:
-            raise ValueError(f"Image label '{image_label}' not found. Please load an image first.")
+            raise ValueError(
+                f"Image label '{image_label}' not found. Please load an image first."
+            )
         self._images[image_label].stretch = value
 
     def get_cuts(self, image_label: str | None = None) -> tuple:
         image_label = self._resolve_image_label(image_label)
         if image_label not in self._images:
-            raise ValueError(f"Image label '{image_label}' not found. Please load an image first.")
+            raise ValueError(
+                f"Image label '{image_label}' not found. Please load an image first."
+            )
         return self._images[image_label].cuts
 
-    def set_cuts(self, value: tuple[numbers.Real, numbers.Real] | BaseInterval, image_label: str | None = None) -> None:
+    def set_cuts(
+        self,
+        value: tuple[numbers.Real, numbers.Real] | BaseInterval,
+        image_label: str | None = None,
+    ) -> None:
         if isinstance(value, tuple) and len(value) == 2:
             self._cuts = ManualInterval(value[0], value[1])
         elif isinstance(value, BaseInterval):
             self._cuts = value
         else:
-            raise TypeError("Cuts must be an Astropy.visualization Interval object or a tuple of two values.")
+            raise TypeError(
+                "Cuts must be an Astropy.visualization Interval object or a tuple of two values."
+            )
         image_label = self._resolve_image_label(image_label)
         if image_label not in self._images:
-            raise ValueError(f"Image label '{image_label}' not found. Please load an image first.")
+            raise ValueError(
+                f"Image label '{image_label}' not found. Please load an image first."
+            )
         self._images[image_label].cuts = self._cuts
 
     def set_colormap(self, map_name: str, image_label: str | None = None) -> None:
         image_label = self._resolve_image_label(image_label)
         if image_label not in self._images:
-            raise ValueError(f"Image label '{image_label}' not found. Please load an image first.")
+            raise ValueError(
+                f"Image label '{image_label}' not found. Please load an image first."
+            )
         self._images[image_label].colormap = map_name
 
     set_colormap.__doc__ = ImageViewerInterface.set_colormap.__doc__
@@ -162,7 +191,9 @@ class ImageViewer:
     def get_colormap(self, image_label: str | None = None) -> str:
         image_label = self._resolve_image_label(image_label)
         if image_label not in self._images:
-            raise ValueError(f"Image label '{image_label}' not found. Please load an image first.")
+            raise ValueError(
+                f"Image label '{image_label}' not found. Please load an image first."
+            )
         return self._images[image_label].colormap
 
     get_colormap.__doc__ = ImageViewerInterface.get_colormap.__doc__
@@ -174,7 +205,9 @@ class ImageViewer:
     @cursor.setter
     def cursor(self, value: str) -> None:
         if value not in self.ALLOWED_CURSOR_LOCATIONS:
-            raise ValueError(f"Cursor location {value} is not valid. Must be one of {self.ALLOWED_CURSOR_LOCATIONS}.")
+            raise ValueError(
+                f"Cursor location {value} is not valid. Must be one of {self.ALLOWED_CURSOR_LOCATIONS}."
+            )
         self._cursor = value
 
     # The methods, grouped loosely by purpose
@@ -200,12 +233,12 @@ class ImageViewer:
         return style
 
     def set_catalog_style(
-            self,
-            catalog_label: str | None = None,
-            shape: str = "circle",
-            color: str = "red",
-            size: float = 5,
-            **kwargs
+        self,
+        catalog_label: str | None = None,
+        shape: str = "circle",
+        color: str = "red",
+        size: float = 5,
+        **kwargs,
     ) -> None:
         """
         Set the style for the catalog.
@@ -229,10 +262,7 @@ class ImageViewer:
             raise ValueError("Must load a catalog before setting a catalog style.")
 
         self._catalogs[catalog_label].style = dict(
-            shape=shape,
-            color=color,
-            size=size,
-            **kwargs
+            shape=shape, color=color, size=size, **kwargs
         )
 
     # Methods for loading data
@@ -271,7 +301,11 @@ class ImageViewer:
 
         return image_label
 
-    def load_image(self, file: str | os.PathLike | ArrayLike | NDData, image_label: str | None = None) -> None:
+    def load_image(
+        self,
+        file: str | os.PathLike | ArrayLike | NDData,
+        image_label: str | None = None,
+    ) -> None:
         """
         Load a FITS file into the viewer.
 
@@ -352,20 +386,24 @@ class ImageViewer:
         # Center the image in the viewport and show the whole image.
         center = (width / 2, height / 2)
         fov = max(image_data.shape)
-        self._images[image_label].largest_dimension = self._determine_largest_dimension(image_data.shape)
+        self._images[image_label].largest_dimension = self._determine_largest_dimension(
+            image_data.shape
+        )
 
         wcs = self._images[image_label].wcs
         # Is there a WCS set? If yes, make center a SkyCoord and fov a Quantity,
         # otherwise leave them as pixels.
         if wcs is not None:
             center = wcs.pixel_to_world(center[0], center[1])
-            fov = fov * u.degree / proj_plane_pixel_scales(wcs)[self._images[image_label].largest_dimension]
+            fov = (
+                fov
+                * u.degree
+                / proj_plane_pixel_scales(wcs)[
+                    self._images[image_label].largest_dimension
+                ]
+            )
 
-        self.set_viewport(
-            center=center,
-            fov=fov,
-            image_label=image_label
-        )
+        self.set_viewport(center=center, fov=fov, image_label=image_label)
 
         # Now set the stretch and cuts
         self.set_cuts(AsymmetricPercentileInterval(1, 95), image_label=image_label)
@@ -386,7 +424,9 @@ class ImageViewer:
             The array to load.
         """
         self._images[image_label].wcs = None  # No WCS for raw arrays
-        self._images[image_label].largest_dimension = self._determine_largest_dimension(array.shape)
+        self._images[image_label].largest_dimension = self._determine_largest_dimension(
+            array.shape
+        )
         self._initialize_image_viewport_stretch_cuts(array, image_label)
 
     def _load_nddata(self, data: NDData, image_label: str | None) -> None:
@@ -399,7 +439,9 @@ class ImageViewer:
             The NDData object to load.
         """
         self._images[image_label].wcs = data.wcs
-        self._images[image_label].largest_dimension = self._determine_largest_dimension(data.data.shape)
+        self._images[image_label].largest_dimension = self._determine_largest_dimension(
+            data.data.shape
+        )
         # Not all NDDData objects have a shape, apparently
         self._initialize_image_viewport_stretch_cuts(data.data, image_label)
 
@@ -407,7 +449,9 @@ class ImageViewer:
         """
         Not implementing some load types is fine.
         """
-        raise NotImplementedError("ASDF loading is not implemented in this dummy viewer.")
+        raise NotImplementedError(
+            "ASDF loading is not implemented in this dummy viewer."
+        )
 
     # Saving contents of the view and accessing the view
     def save(self, filename: str | os.PathLike, overwrite: bool = False) -> None:
@@ -426,15 +470,23 @@ class ImageViewer:
         """
         p = Path(filename)
         if p.exists() and not overwrite:
-            raise FileExistsError(f"File {filename} already exists. Use overwrite=True to overwrite it.")
+            raise FileExistsError(
+                f"File {filename} already exists. Use overwrite=True to overwrite it."
+            )
 
         p.write_text("This is a dummy file. The viewer does not save anything.")
 
     # Marker-related methods
-    def load_catalog(self, table: Table, x_colname: str = 'x', y_colname: str = 'y',
-                    skycoord_colname: str = 'coord', use_skycoord: bool = False,
-                    catalog_label: str | None = None,
-                    catalog_style: dict | None = None) -> None:
+    def load_catalog(
+        self,
+        table: Table,
+        x_colname: str = "x",
+        y_colname: str = "y",
+        skycoord_colname: str = "coord",
+        use_skycoord: bool = False,
+        catalog_label: str | None = None,
+        catalog_style: dict | None = None,
+    ) -> None:
         try:
             coords = table[skycoord_colname]
         except KeyError:
@@ -456,7 +508,9 @@ class ImageViewer:
 
         if coords is None:
             if use_skycoord and self._wcs is None:
-                raise ValueError("Cannot use sky coordinates without a SkyCoord column or WCS.")
+                raise ValueError(
+                    "Cannot use sky coordinates without a SkyCoord column or WCS."
+                )
             elif xy is not None and self._wcs is not None:
                 # If we have xy coordinates, convert them to sky coordinates
                 coords = self._wcs.pixel_to_world(xy[0], xy[1])
@@ -516,34 +570,49 @@ class ImageViewer:
         except KeyError:
             raise ValueError(f"Catalog label {catalog_label} not found.")
 
-    def get_catalog(self, x_colname: str = 'x', y_colname: str = 'y',
-                    skycoord_colname: str = 'coord',
-                    catalog_label: str | None = None) -> Table:
+    def get_catalog(
+        self,
+        x_colname: str = "x",
+        y_colname: str = "y",
+        skycoord_colname: str = "coord",
+        catalog_label: str | None = None,
+    ) -> Table:
         # Dostring is copied from the interface definition, so it is not
         # duplicated here.
         catalog_label = self._resolve_catalog_label(catalog_label)
 
-        result = self._catalogs[catalog_label].data if catalog_label in self._catalogs else Table(names=["x", "y", "coord"])
+        result = (
+            self._catalogs[catalog_label].data
+            if catalog_label in self._catalogs
+            else Table(names=["x", "y", "coord"])
+        )
 
-        result.rename_columns(["x", "y", "coord"], [x_colname, y_colname, skycoord_colname])
+        result.rename_columns(
+            ["x", "y", "coord"], [x_colname, y_colname, skycoord_colname]
+        )
 
         return result
+
     get_catalog.__doc__ = ImageViewerInterface.get_catalog.__doc__
 
     def get_catalog_names(self) -> list[str]:
         return list(self._user_catalog_labels())
+
     get_catalog_names.__doc__ = ImageViewerInterface.get_catalog_names.__doc__
 
     # Methods that modify the view
     def set_viewport(
-                self, center: SkyCoord | tuple[numbers.Real, numbers.Real] | None = None,
+        self,
+        center: SkyCoord | tuple[numbers.Real, numbers.Real] | None = None,
         fov: Quantity | numbers.Real | None = None,
-        image_label: str | None = None
+        image_label: str | None = None,
     ) -> None:
         image_label = self._resolve_image_label(image_label)
 
         if image_label not in self._images:
-            raise ValueError(f"Image label '{image_label}' not found. Please load an image first.")
+            raise ValueError(
+                f"Image label '{image_label}' not found. Please load an image first."
+            )
 
         # Get current center/fov, if any, so that the user may input only one of them
         # after the initial setup if they wish.
@@ -555,32 +624,53 @@ class ImageViewer:
 
         # If either center or fov is None these checks will raise an appropriate error
         if not isinstance(center, (SkyCoord, tuple)):
-            raise TypeError("Invalid value for center. Center must be a SkyCoord or tuple of (X, Y).")
+            raise TypeError(
+                "Invalid value for center. Center must be a SkyCoord or tuple of (X, Y)."
+            )
         if not isinstance(fov, (Quantity, numbers.Real)):
-            raise TypeError("Invalid value for fov. fov must be an angular Quantity or float.")
+            raise TypeError(
+                "Invalid value for fov. fov must be an angular Quantity or float."
+            )
 
         if isinstance(fov, Quantity) and not fov.unit.is_equivalent(u.deg):
-            raise u.UnitTypeError("Incorrect unit for fov. fov must be an angular Quantity or float.")
+            raise u.UnitTypeError(
+                "Incorrect unit for fov. fov must be an angular Quantity or float."
+            )
 
         # Check that the center and fov are compatible with the current image
         if self._images[image_label].wcs is None:
             if current_viewport.center is not None:
                 # If there is a WCS either input is fine. If there is no WCS then we only
                 # check wther the new center is the same type as the current center.
-                if isinstance(center, SkyCoord) and not isinstance(current_viewport.center, SkyCoord):
-                    raise TypeError("Center must be a tuple for this image when WCS is not set.")
-                elif isinstance(center, tuple) and not isinstance(current_viewport.center, tuple):
-                    raise TypeError("Center must be a SkyCoord for this image when WCS is not set.")
+                if isinstance(center, SkyCoord) and not isinstance(
+                    current_viewport.center, SkyCoord
+                ):
+                    raise TypeError(
+                        "Center must be a tuple for this image when WCS is not set."
+                    )
+                elif isinstance(center, tuple) and not isinstance(
+                    current_viewport.center, tuple
+                ):
+                    raise TypeError(
+                        "Center must be a SkyCoord for this image when WCS is not set."
+                    )
             if current_viewport.fov is not None:
-                if isinstance(fov, Quantity) and not isinstance(current_viewport.fov, Quantity):
-                    raise TypeError("FOV must be a float for this image when WCS is not set.")
-                elif isinstance(fov, numbers.Real) and not isinstance(current_viewport.fov, numbers.Real):
-                    raise TypeError("FOV must be a float for this image when WCS is not set.")
+                if isinstance(fov, Quantity) and not isinstance(
+                    current_viewport.fov, Quantity
+                ):
+                    raise TypeError(
+                        "FOV must be a float for this image when WCS is not set."
+                    )
+                elif isinstance(fov, numbers.Real) and not isinstance(
+                    current_viewport.fov, numbers.Real
+                ):
+                    raise TypeError(
+                        "FOV must be a float for this image when WCS is not set."
+                    )
 
         # 😅 if we made it this far we should be able to handle the actual setting
         self._images[image_label].center = center
         self._images[image_label].fov = fov
-
 
     set_viewport.__doc__ = ImageViewerInterface.set_viewport.__doc__
 
@@ -592,7 +682,9 @@ class ImageViewer:
         image_label = self._resolve_image_label(image_label)
 
         if image_label not in self._images:
-            raise ValueError(f"Image label '{image_label}' not found. Please load an image first.")
+            raise ValueError(
+                f"Image label '{image_label}' not found. Please load an image first."
+            )
 
         viewport = self._images[image_label]
 
@@ -618,32 +710,39 @@ class ImageViewer:
                 # At least one of center or fov is not set, which means at least one
                 # was not already sky, so we need to convert them or fail
                 if viewport.wcs is None:
-                    raise ValueError("WCS is not set. Cannot convert pixel coordinates to sky coordinates.")
+                    raise ValueError(
+                        "WCS is not set. Cannot convert pixel coordinates to sky coordinates."
+                    )
                 else:
-                    center = viewport.wcs.pixel_to_world(viewport.center[0], viewport.center[1])
-                    pixel_scale = proj_plane_pixel_scales(viewport.wcs)[viewport.largest_dimension]
+                    center = viewport.wcs.pixel_to_world(
+                        viewport.center[0], viewport.center[1]
+                    )
+                    pixel_scale = proj_plane_pixel_scales(viewport.wcs)[
+                        viewport.largest_dimension
+                    ]
                     fov = pixel_scale * viewport.fov * u.degree
         else:
             # Pixel coordinates
             if isinstance(viewport.center, SkyCoord):
                 if viewport.wcs is None:
-                    raise ValueError("WCS is not set. Cannot convert sky coordinates to pixel coordinates.")
+                    raise ValueError(
+                        "WCS is not set. Cannot convert sky coordinates to pixel coordinates."
+                    )
                 center = viewport.wcs.world_to_pixel(viewport.center)
             else:
                 center = viewport.center
             if isinstance(viewport.fov, Quantity):
                 if viewport.wcs is None:
-                    raise ValueError("WCS is not set. Cannot convert FOV to pixel coordinates.")
-                pixel_scale = proj_plane_pixel_scales(viewport.wcs)[viewport.largest_dimension]
+                    raise ValueError(
+                        "WCS is not set. Cannot convert FOV to pixel coordinates."
+                    )
+                pixel_scale = proj_plane_pixel_scales(viewport.wcs)[
+                    viewport.largest_dimension
+                ]
                 fov = viewport.fov.value / pixel_scale
             else:
                 fov = viewport.fov
 
-        return dict(
-            center=center,
-            fov=fov,
-            image_label=image_label
-        )
-
+        return dict(center=center, fov=fov, image_label=image_label)
 
     get_viewport.__doc__ = ImageViewerInterface.get_viewport.__doc__

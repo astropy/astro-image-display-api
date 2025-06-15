@@ -12,4 +12,5 @@ def test_instance():
 class TestDummyViewer(ImageWidgetAPITest):
     """
     Test functionality of the ImageViewer class."""
+
     image_widget_class = ImageViewer
