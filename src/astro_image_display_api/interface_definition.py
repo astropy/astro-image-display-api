@@ -1,19 +1,18 @@
-from typing import Protocol, runtime_checkable, Any
-from abc import abstractmethod
 import numbers
 import os
+from abc import abstractmethod
+from typing import Any, Protocol, runtime_checkable
 
 from astropy.coordinates import SkyCoord
 from astropy.table import Table
 from astropy.units import Quantity
 from astropy.visualization import BaseInterval, BaseStretch
 
-
 # Allowed locations for cursor display
-ALLOWED_CURSOR_LOCATIONS = ('top', 'bottom', None)
+ALLOWED_CURSOR_LOCATIONS = ("top", "bottom", None)
 
 __all__ = [
-    'ImageViewerInterface',
+    "ImageViewerInterface",
 ]
 
 
@@ -56,7 +55,11 @@ class ImageViewerInterface(Protocol):
 
     # Setting and getting image properties
     @abstractmethod
-    def set_cuts(self, cuts: tuple[numbers.Real, numbers.Real] | BaseInterval, image_label: str | None = None) -> None:
+    def set_cuts(
+        self,
+        cuts: tuple[numbers.Real, numbers.Real] | BaseInterval,
+        image_label: str | None = None,
+    ) -> None:
         """
         Set the cuts for the image.
 
@@ -74,8 +77,8 @@ class ImageViewerInterface(Protocol):
         Raises
         ------
         TypeError
-            If the `cuts` parameter is not a tuple or an `astropy.visualization.BaseInterval`
-            object.
+            If the `cuts` parameter is not a tuple or an
+            `astropy.visualization.BaseInterval` object.
 
         ValueError
             If the `image_label` is not provided when there are multiple images loaded,
@@ -200,8 +203,8 @@ class ImageViewerInterface(Protocol):
         Raises
         ------
         ValueError
-            If the `image_label` is not provided when there are multiple images loaded or if
-            the `image_label` does not correspond to a loaded image.
+            If the `image_label` is not provided when there are multiple images loaded
+            or if the `image_label` does not correspond to a loaded image.
         """
         raise NotImplementedError
 
@@ -229,10 +232,16 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def load_catalog(self, table: Table, x_colname: str = 'x', y_colname: str = 'y',
-                    skycoord_colname: str = 'coord', use_skycoord: bool = False,
-                    catalog_label: str | None = None,
-                    catalog_style: dict | None = None) -> None:
+    def load_catalog(
+        self,
+        table: Table,
+        x_colname: str = "x",
+        y_colname: str = "y",
+        skycoord_colname: str = "coord",
+        use_skycoord: bool = False,
+        catalog_label: str | None = None,
+        catalog_style: dict | None = None,
+    ) -> None:
         """
         Add catalog entries to the viewer at positions given by the catalog.
 
@@ -274,10 +283,10 @@ class ImageViewerInterface(Protocol):
     def set_catalog_style(
         self,
         catalog_label: str | None = None,
-        shape: str = 'circle',
-        color: str = 'red',
+        shape: str = "circle",
+        color: str = "red",
         size: float = 5.0,
-        **kwargs
+        **kwargs,
     ):
         """
         Set the style of the catalog markers.
@@ -365,9 +374,13 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def get_catalog(self, x_colname: str = 'x', y_colname: str = 'y',
-                    skycoord_colname: str = 'coord',
-                    catalog_label: str | None = None) -> Table:
+    def get_catalog(
+        self,
+        x_colname: str = "x",
+        y_colname: str = "y",
+        skycoord_colname: str = "coord",
+        catalog_label: str | None = None,
+    ) -> Table:
         """
         Get the marker positions.
 
@@ -394,7 +407,8 @@ class ImageViewerInterface(Protocol):
         Raises
         ------
         ValueError
-            If the `catalog_label` is not provided when there are multiple catalogs loaded.
+            If the `catalog_label` is not provided when there are multiple catalogs
+            loaded.
         """
         raise NotImplementedError
 
@@ -413,9 +427,10 @@ class ImageViewerInterface(Protocol):
     # Methods that modify the view
     @abstractmethod
     def set_viewport(
-        self, center: SkyCoord | tuple[float, float] | None = None,
+        self,
+        center: SkyCoord | tuple[float, float] | None = None,
         fov: Quantity | float | None = None,
-        image_label: str | None = None
+        image_label: str | None = None,
     ) -> None:
         """
         Set the viewport of the image, which defines the center and field of view.
@@ -426,8 +441,9 @@ class ImageViewerInterface(Protocol):
             The center of the viewport. If not given, the current center is used.
         fov : `astropy.units.Quantity` or float, optional
             The field of view (FOV) of the viewport. If not given, the current FOV
-            is used. If a float is given, it is interpreted a size in pixels. For images that are
-            not square, the FOV is interpreted as the size of the longer side of the image.
+            is used. If a float is given, it is interpreted a size in pixels. For images
+            that are not square, the FOV is interpreted as the size of the longer side
+            of the image.
         image_label : str, optional
             The label of the image to set the viewport for. If not given and there is
             only one image loaded, the viewport for that image is set. If there are
@@ -449,7 +465,9 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def get_viewport(self, sky_or_pixel: str | None = None, image_label: str | None = None) -> dict[str, Any]:
+    def get_viewport(
+        self, sky_or_pixel: str | None = None, image_label: str | None = None
+    ) -> dict[str, Any]:
         """
         Get the current viewport of the image.
 
@@ -459,12 +477,12 @@ class ImageViewerInterface(Protocol):
             If 'sky', the center will be returned as a `SkyCoord` object.
             If 'pixel', the center will be returned as a tuple of pixel coordinates.
             If `None`, the default behavior is to return the center as a `SkyCoord` if
-            possible, or as a tuple of floats if the image is in pixel coordinates and has
-            no WCS information.
+            possible, or as a tuple of floats if the image is in pixel coordinates and
+            has no WCS information.
         image_label : str, optional
-            The label of the image to get the viewport for. If not given and there is only one
-            image loaded, the viewport for that image is returned. If there are multiple images
-            and no label is provided, an error is raised.
+            The label of the image to get the viewport for. If not given and there is
+            only one image loaded, the viewport for that image is returned. If there
+            are multiple images and no label is provided, an error is raised.
 
         Returns
         -------
@@ -478,8 +496,8 @@ class ImageViewerInterface(Protocol):
         Raises
         -------
         ValueError
-            If the `sky_or_pixel` parameter is not one of 'sky', 'pixel', or `None`, or if
-            the `image_label` is not provided when there are multiple images loaded, or if
-            the `image_label` does not correspond to a loaded image.
+            If the `sky_or_pixel` parameter is not one of 'sky', 'pixel', or `None`,
+            or if the `image_label` is not provided when there are multiple images
+            loaded, or if the `image_label` does not correspond to a loaded image.
         """
         raise NotImplementedError

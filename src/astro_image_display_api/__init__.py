@@ -3,4 +3,4 @@
 # SPDX-License-Identifier: MIT
 
 from .interface_definition import *  # noqa: F403
-from .widget_api_test import *       # noqa: F403
+from .widget_api_test import *  # noqa: F403
