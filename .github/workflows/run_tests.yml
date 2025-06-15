@@ -1,12 +1,17 @@
 name: CI
 
 on:
+  workflow_dispatch:
   push:
   pull_request:
   schedule:
     # Weekly Friday 5AM build
     # * is a special character in YAML so you have to quote this string
     - cron: '0 5 * * 5'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
     tests:
