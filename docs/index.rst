@@ -15,7 +15,7 @@ want to write a package that displays astronomical images and provide a
 uniform interface for users to interact with these images programmatically.
 
 If you are a user looking for a way to display astronomical images, please
-see the `aida-backends`_ page, which has a list of packages that implement
+see the :ref:`aida_backends` page, which has a list of packages that implement
 this API.
 
 How to implement this API in your package
@@ -35,3 +35,12 @@ How to implement this API in your package
    of image and catalog labels. You are **not** required to use this reference
    implementation; it is just a convenience you can use to get started if you
    want to.
+
+.. toctree::
+  :maxdepth: 1
+  :hidden:
+
+  api.rst
+  reference_implementation.rst
+  testing_implementation.rst
+  aida_backends.rst

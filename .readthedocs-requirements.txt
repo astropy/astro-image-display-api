@@ -1,6 +1,0 @@
-astropy
-numpy
-sphinx
-sphinx-astropy[confv2]
-sphinx-design
-graphviz

@@ -494,7 +494,7 @@ class ImageViewerInterface(Protocol):
             - 'image_label' is a string representing the label of the image.
 
         Raises
-        -------
+        ------
         ValueError
             If the `sky_or_pixel` parameter is not one of 'sky', 'pixel', or `None`,
             or if the `image_label` is not provided when there are multiple images
