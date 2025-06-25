@@ -1,6 +1,3 @@
-ci:
-  autoupdate_commit_msg: 'chore: update pre-commit hooks'
-
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -26,6 +23,7 @@ repos:
       - id: mixed-line-ending
         # Makes all line endings unix-style
         args: [--fix=lf]
+        exclude: docs/make.bat
 
 
 # Per the ruff documentation, this should be before black
@@ -47,3 +45,9 @@ repos:
   rev: v2.4.1
   hooks:
   - id: codespell
+
+# Make pre-commit-ci more reasonable
+ci:
+  autofix_prs: false
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly

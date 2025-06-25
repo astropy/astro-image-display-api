@@ -40,11 +40,11 @@ class ImageViewerInterface(Protocol):
 
         Parameters
         ----------
-        data : Any
+        data :
             The data to load. This can be a FITS file, a 2D array,
             or an `astropy.nddata.NDData` object.
 
-        image_label : str, optional
+        image_label : optional
             The label for the image.
 
         Notes
@@ -65,12 +65,12 @@ class ImageViewerInterface(Protocol):
 
         Parameters
         ----------
-        cuts : tuple or any Interval from `astropy.visualization`
+        cuts: any interval from `astropy.visualization`
             The cuts to set. If a tuple, it should be of the form
             ``(min, max)`` and will be interpreted as a
             `~astropy.visualization.ManualInterval`.
 
-        image_label : str, optional
+        image_label : optional
             The label of the image to set the cuts for. If not given and there is
             only one image loaded, the cuts for that image are set.
 
@@ -93,14 +93,14 @@ class ImageViewerInterface(Protocol):
 
         Parameters
         ----------
-        image_label : str, optional
+        image_label : optional
             The label of the image to get the cuts for. If not given and there is
             only one image loaded, the cuts for that image are returned. If there are
             multiple images and no label is provided, an error is raised.
 
         Returns
         -------
-        cuts : `~astropy.visualization.BaseInterval`
+        cuts : `astropy.visualization.BaseInterval`
             The Astropy interval object representing the current cuts.
 
         Raises
@@ -163,12 +163,12 @@ class ImageViewerInterface(Protocol):
 
         Parameters
         ----------
-        map_name : str
+        map_name
             The name of the colormap to set. This should be a
             valid colormap name from Matplotlib`_;
             not all backends will support
             all colormaps, so the viewer should handle errors gracefully.
-        image_label : str, optional
+        image_label : optional
             The label of the image to set the colormap for. If not given and there is
             only one image loaded, the colormap for that image is set. If there are
             multiple images and no label is provided, an error is raised.

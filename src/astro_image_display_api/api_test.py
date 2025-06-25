@@ -18,10 +18,10 @@ from astropy.wcs import WCS
 
 from .interface_definition import ImageViewerInterface
 
-__all__ = ["ImageWidgetAPITest"]
+__all__ = ["ImageAPITest"]
 
 
-class ImageWidgetAPITest:
+class ImageAPITest:
     cursor_error_classes = ValueError
 
     @pytest.fixture
