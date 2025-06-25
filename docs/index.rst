@@ -28,7 +28,7 @@ How to implement this API in your package
    step explains how to assert that your package implements the API correctly.
 2. :ref:`testing_AIDA_implementation` describes how to test your
    package against the API.
-3. There is a :ref:`reference_implementation` of the API that you can use as a
+3. There is a :ref:`sample implementation <reference_implementation>` of the API that you can use as a
    starting point for your own package. This reference implementation does not
    do any image display itself, but provides a set of methods that you can
    override to implement your own image display logic on top of the management
@@ -41,6 +41,6 @@ How to implement this API in your package
   :hidden:
 
   api.rst
-  reference_implementation.rst
   testing_implementation.rst
+  reference_implementation.rst
   aida_backends.rst

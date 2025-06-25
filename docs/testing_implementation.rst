@@ -1,7 +1,7 @@
 .. _testing_AIDA_implementation:
 
-Testing your implementation of AIDA
-===================================
+Testing
+=======
 
 Our goal is to make it easy for you to test your implementation of the
 Astronomical Image Display API (AIDA). There are two things you need to test:

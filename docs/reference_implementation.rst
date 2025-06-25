@@ -1,7 +1,7 @@
 .. _reference_implementation:
 
-Reference implementation of AIDA non-display logic
-==================================================
+Sample implementation
+=====================
 
 The class `astro_image_display_api.image_viewer_logic.ImageViewerLogic` is provided
 as an *example* of how to implement the non-display logic of the Astronomical Image Display API (AIDA).
