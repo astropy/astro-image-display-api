@@ -93,7 +93,7 @@ class ImageViewerInterface(Protocol):
 
         Parameters
         ----------
-        image_label : ptional
+        image_label : optional
             The label of the image to get the cuts for. If not given and there is
             only one image loaded, the cuts for that image are returned. If there are
             multiple images and no label is provided, an error is raised.
