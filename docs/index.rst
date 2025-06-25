@@ -31,7 +31,7 @@ How to implement this API in your package
 3. There is a :ref:`reference_implementation` of the API that you can use as a
    starting point for your own package. This reference implementation does not
    do any image display itself, but provides a set of methods that you can
-   override to implement your own image display logic on top of the mananagement
+   override to implement your own image display logic on top of the management
    of image and catalog labels. You are **not** required to use this reference
    implementation; it is just a convenience you can use to get started if you
    want to.

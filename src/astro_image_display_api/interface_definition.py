@@ -168,7 +168,7 @@ class ImageViewerInterface(Protocol):
             valid colormap name from Matplotlib`_;
             not all backends will support
             all colormaps, so the viewer should handle errors gracefully.
-        image_label : str, optional
+        image_label : optional
             The label of the image to set the colormap for. If not given and there is
             only one image loaded, the colormap for that image is set. If there are
             multiple images and no label is provided, an error is raised.
