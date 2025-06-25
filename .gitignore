@@ -54,6 +54,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+src/astro_image_display_api/version.py
 
 # Translations
 *.mo
@@ -74,6 +75,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/api/
 
 # PyBuilder
 .pybuilder/

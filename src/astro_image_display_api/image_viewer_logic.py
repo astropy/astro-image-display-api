@@ -51,7 +51,7 @@ class ViewportInfo:
 
 
 @dataclass
-class ImageViewer:
+class ImageViewerLogic:
     """
     This viewer does not do anything except making changes to its internal
     state to simulate the behavior of a real viewer.

@@ -12,8 +12,8 @@ def test_api_test_class_completeness():
     required_attributes = ImageViewerInterface.__protocol_attrs__
 
     # Get the text of the api tests
-    widget_api_test_content = get_pkg_data_contents(
-        "widget_api_test.py", package="astro_image_display_api"
+    api_test_content = get_pkg_data_contents(
+        "api_test.py", package="astro_image_display_api"
     )
     # Loop over the attributes and check that the test class has a method
     # for each one whose name starts with test_ and ends with the attribute
@@ -21,7 +21,7 @@ def test_api_test_class_completeness():
     attr_present = []
     image_viewer_name = "self.image"
     for attr in required_attributes:
-        attr_present.append(f"{image_viewer_name}.{attr}" in widget_api_test_content)
+        attr_present.append(f"{image_viewer_name}.{attr}" in api_test_content)
 
     missing_attributes = [
         attr
