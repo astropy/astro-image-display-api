@@ -441,7 +441,7 @@ class ImageViewerInterface(Protocol):
             The center of the viewport. If not given, the current center is used.
         fov : `astropy.units.Quantity` or float, optional
             The field of view (FOV) of the viewport. If not given, the current FOV
-            is used. If a float is given, it is interpreted a size in pixels. For viewers
+            is used. If a float is given, it is interpreted as a size in pixels. For viewers
             that are not square, the FOV is interpreted as the size of the shorter side
             of the viewer such that the FOV is guaranteed to be entirely visible
             regardless of the aspect ratio of the viewer.
