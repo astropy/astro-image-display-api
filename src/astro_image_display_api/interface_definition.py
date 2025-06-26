@@ -49,7 +49,8 @@ class ImageViewerInterface(Protocol):
 
         Notes
         -----
-        Loading an image should also set the viewport for that image.
+
+        Loading an image should also set an appropriate viewport for that image.
         """
         raise NotImplementedError
 
@@ -83,6 +84,11 @@ class ImageViewerInterface(Protocol):
         ValueError
             If the `image_label` is not provided when there are multiple images loaded,
             or if the `image_label` does not correspond to a loaded image.
+
+        Notes
+        -----
+        Setting cuts should update the display of the image to reflect the new
+        cuts.
         """
         raise NotImplementedError
 
@@ -108,6 +114,10 @@ class ImageViewerInterface(Protocol):
         ValueError
             If the `image_label` is not provided when there are multiple images loaded,
             or if the `image_label` does not correspond to a loaded image.
+
+        Notes
+        -----
+        This has no effect on the displayed image.
         """
         raise NotImplementedError
 
@@ -134,6 +144,11 @@ class ImageViewerInterface(Protocol):
         ValueError
             if the `image_label` is not provided when there are multiple images loaded
             or if the `image_label` does not correspond to a loaded image.
+
+        Notes
+        -----
+        Setting the stretch should update the display of the image to reflect the new
+        stretch.
         """
         raise NotImplementedError
 
@@ -153,6 +168,10 @@ class ImageViewerInterface(Protocol):
         -------
         stretch : `~astropy.visualization.BaseStretch`
             The Astropy stretch object representing the current stretch.
+
+        Notes
+        -----
+        This has no effect on the displayed image.
         """
         raise NotImplementedError
 
@@ -178,6 +197,10 @@ class ImageViewerInterface(Protocol):
         ValueError
             If the `map_name` is not a valid colormap name or if the `image_label`
             is not provided when there are multiple images loaded.
+
+        Notes
+        -----
+        This should update the display of the image to reflect the new colormap.
 
         .. _Matplotlib: https://matplotlib.org/stable/gallery/color/colormap_reference.html
         """
@@ -205,6 +228,10 @@ class ImageViewerInterface(Protocol):
         ValueError
             If the `image_label` is not provided when there are multiple images loaded
             or if the `image_label` does not correspond to a loaded image.
+
+        Notes
+        -----
+        This has no effect on the displayed image.
         """
         raise NotImplementedError
 
@@ -228,6 +255,10 @@ class ImageViewerInterface(Protocol):
         ------
         FileExistsError
             If the file already exists and `overwrite` is `False`.
+
+        Notes
+        -----
+        This has no effect on the displayed image.
         """
         raise NotImplementedError
 
@@ -276,6 +307,11 @@ class ImageViewerInterface(Protocol):
             If the `table` does not contain the required columns, or if
             the `catalog_label` is not provided when there are multiple
             catalogs loaded.
+
+        Notes
+        -----
+        This should display the markers on the image in addition to storing
+        the marker positions in the viewer.
         """
         raise NotImplementedError
 
@@ -305,17 +341,20 @@ class ImageViewerInterface(Protocol):
         **kwargs
             Additional keyword arguments to pass to the marker style.
 
-        Notes
-        -----
-        The following shapes are supported: "circle", "square", "crosshair", "plus",
-        "diamond".
-
         Raises
         ------
         ValueError
             If there are multiple catalog styles set and the user has not
             specified a `catalog_label` for which to set the style, or if
             an style is set for a catalog that does not exist.
+
+        Notes
+        -----
+        The following shapes are supported: "circle", "square", "crosshair", "plus",
+        "diamond".
+
+        Changing the style of the markers should update the display of the
+        markers in the image.
         """
         raise NotImplementedError
 
@@ -344,6 +383,10 @@ class ImageViewerInterface(Protocol):
         ValueError
             If there are multiple catalog styles set and the user has not
             specified a `catalog_label` for which to get the style.
+
+        Notes
+        -----
+        This has no effect on the displayed image.
 
         """
         raise NotImplementedError
@@ -409,6 +452,10 @@ class ImageViewerInterface(Protocol):
         ValueError
             If the `catalog_label` is not provided when there are multiple catalogs
             loaded.
+
+        Notes
+        -----
+        This has no effect on the displayed image.
         """
         raise NotImplementedError
 
@@ -421,6 +468,10 @@ class ImageViewerInterface(Protocol):
         -------
         list of str
             The names of the loaded catalogs.
+
+        Notes
+        -----
+        This has no effect on the displayed image.
         """
         raise NotImplementedError
 
@@ -441,10 +492,10 @@ class ImageViewerInterface(Protocol):
             The center of the viewport. If not given, the current center is used.
         fov : `astropy.units.Quantity` or float, optional
             The field of view (FOV) of the viewport. If not given, the current FOV
-            is used. If a float is given, it is interpreted as a size in pixels. For viewers
-            that are not square, the FOV is interpreted as the size of the shorter side
-            of the viewer such that the FOV is guaranteed to be entirely visible
-            regardless of the aspect ratio of the viewer.
+            is used. If a float is given, it is interpreted as a size in pixels. For
+            viewers that are not square, the FOV is interpreted as the size of the
+            shorter side of the viewer such that the FOV is guaranteed to be entirely
+            visible regardless of the aspect ratio of the viewer.
         image_label : str, optional
             The label of the image to set the viewport for. If not given and there is
             only one image loaded, the viewport for that image is set. If there are
@@ -462,6 +513,11 @@ class ImageViewerInterface(Protocol):
 
         `astropy.units.UnitTypeError`
             If the `fov` is a `Quantity` but does not have an angular unit.
+
+        Notes
+        -----
+        Setting the viewport should update the display of the image to reflect the new
+        viewport.
         """
         raise NotImplementedError
 
@@ -500,5 +556,9 @@ class ImageViewerInterface(Protocol):
             If the `sky_or_pixel` parameter is not one of 'sky', 'pixel', or `None`,
             or if the `image_label` is not provided when there are multiple images
             loaded, or if the `image_label` does not correspond to a loaded image.
+
+        Notes
+        -----
+        This has no effect on the displayed image.
         """
         raise NotImplementedError
