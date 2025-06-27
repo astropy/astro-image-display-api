@@ -49,6 +49,49 @@ class ImageViewerInterface(Protocol):
 
     # Setting and getting image properties
     @abstractmethod
+    def get_image(
+        self,
+        image_label: str | None = None,
+    ) -> Any:
+        """
+        Parameters
+        ----------
+        image_label : optional
+            The label of the image to set the cuts for. If not given and there is
+            only one image loaded, that image is returned.
+
+        Raises
+        ------
+        ValueError
+            If the `image_label` is not provided when there are multiple images loaded,
+            or if the `image_label` does not correspond to a loaded image.
+
+        Returns
+        -------
+        image_data : Any
+            The data of the loaded image. The exact type of the data is not specified,
+            and different backends may return different types. A return type compatible
+            with `astropy.nddata.NDData` is preferred, but not required. It is expected
+            that the returned data can be re-loaded into the viewer using
+            `load_image`, however.
+        """
+        raise NotImplementedError
+        
+    @abstractmethod
+    def get_image_labels(
+        self,
+    ) -> list[str]: 
+        """
+        Get the labels of the loaded images.
+
+        Returns
+        -------
+        image_labels: list of str
+            The labels of the loaded images.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def set_cuts(
         self,
         cuts: tuple[numbers.Real, numbers.Real] | BaseInterval,
