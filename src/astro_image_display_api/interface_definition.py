@@ -29,13 +29,13 @@ class ImageViewerInterface(Protocol):
         """
         Load data into the viewer. At a minimum, this should allow a FITS file
         to be loaded. Viewers may allow additional data types to be loaded, such as
-        2D arrays or `astropy.nddata.NDData` objects.
+        2D arrays or `~astropy.nddata.NDData` objects.
 
         Parameters
         ----------
         data :
             The data to load. This can be a FITS file, a 2D array,
-            or an `astropy.nddata.NDData` object.
+            or an `~astropy.nddata.NDData` object.
 
         image_label : optional
             The label for the image.
@@ -74,8 +74,8 @@ class ImageViewerInterface(Protocol):
             `astropy.visualization.BaseInterval` object.
 
         ValueError
-            If the `image_label` is not provided when there are multiple images loaded,
-            or if the `image_label` does not correspond to a loaded image.
+            If the ``image_label`` is not provided when there are multiple images loaded,
+            or if the ``image_label`` does not correspond to a loaded image.
         """
         raise NotImplementedError
 
@@ -99,8 +99,8 @@ class ImageViewerInterface(Protocol):
         Raises
         ------
         ValueError
-            If the `image_label` is not provided when there are multiple images loaded,
-            or if the `image_label` does not correspond to a loaded image.
+            If the ``image_label`` is not provided when there are multiple images loaded,
+            or if the ``image_label`` does not correspond to a loaded image.
         """
         raise NotImplementedError
 
@@ -122,11 +122,11 @@ class ImageViewerInterface(Protocol):
         Raises
         ------
         TypeError
-            If the `stretch` is not a valid `BaseStretch` object
+            If the ``stretch`` is not a valid `~astropy.visualization.BaseStretch` object.
 
         ValueError
-            if the `image_label` is not provided when there are multiple images loaded
-            or if the `image_label` does not correspond to a loaded image.
+            If the ``image_label`` is not provided when there are multiple images loaded
+            or if the ``image_label`` does not correspond to a loaded image.
         """
         raise NotImplementedError
 
@@ -158,7 +158,7 @@ class ImageViewerInterface(Protocol):
         ----------
         map_name
             The name of the colormap to set. This should be a
-            valid colormap name from Matplotlib`_;
+            valid colormap name from `Matplotlib`_;
             not all backends will support
             all colormaps, so the viewer should handle errors gracefully.
         image_label : optional
@@ -169,7 +169,7 @@ class ImageViewerInterface(Protocol):
         Raises
         ------
         ValueError
-            If the `map_name` is not a valid colormap name or if the `image_label`
+            If the ``map_name`` is not a valid colormap name or if the ``image_label``
             is not provided when there are multiple images loaded.
 
         .. _Matplotlib: https://matplotlib.org/stable/gallery/color/colormap_reference.html
@@ -196,8 +196,8 @@ class ImageViewerInterface(Protocol):
         Raises
         ------
         ValueError
-            If the `image_label` is not provided when there are multiple images loaded
-            or if the `image_label` does not correspond to a loaded image.
+            If the ``image_label`` is not provided when there are multiple images loaded
+            or if the ``image_label`` does not correspond to a loaded image.
         """
         raise NotImplementedError
 
@@ -220,7 +220,7 @@ class ImageViewerInterface(Protocol):
         Raises
         ------
         FileExistsError
-            If the file already exists and `overwrite` is `False`.
+            If the file already exists and ``overwrite`` is `False`.
         """
         raise NotImplementedError
 
@@ -266,8 +266,8 @@ class ImageViewerInterface(Protocol):
         Raises
         ------
         ValueError
-            If the `table` does not contain the required columns, or if
-            the `catalog_label` is not provided when there are multiple
+            If the ``table`` does not contain the required columns, or if
+            the ``catalog_label`` is not provided when there are multiple
             catalogs loaded.
         """
         raise NotImplementedError
@@ -307,7 +307,7 @@ class ImageViewerInterface(Protocol):
         ------
         ValueError
             If there are multiple catalog styles set and the user has not
-            specified a `catalog_label` for which to set the style, or if
+            specified a ``catalog_label`` for which to set the style, or if
             an style is set for a catalog that does not exist.
         """
         raise NotImplementedError
@@ -336,7 +336,7 @@ class ImageViewerInterface(Protocol):
 
         ValueError
             If there are multiple catalog styles set and the user has not
-            specified a `catalog_label` for which to get the style.
+            specified a ``catalog_label`` for which to get the style.
 
         """
         raise NotImplementedError
@@ -356,12 +356,12 @@ class ImageViewerInterface(Protocol):
         Raises
         ------
         ValueError
-            If the `catalog_label` is not provided when there are multiple
+            If the ``catalog_label`` is not provided when there are multiple
             catalogs loaded, or if the `catalog_label` does not correspond to a
             loaded catalog.
 
         TypeError
-            If the `catalog_label` is not a string or `None`, or if it is not
+            If the ``catalog_label`` is not a string or `None`, or if it is not
             one of the allowed values.
         """
         raise NotImplementedError
@@ -400,7 +400,7 @@ class ImageViewerInterface(Protocol):
         Raises
         ------
         ValueError
-            If the `catalog_label` is not provided when there are multiple catalogs
+            If the ``catalog_label`` is not provided when there are multiple catalogs
             loaded.
         """
         raise NotImplementedError
@@ -446,15 +446,15 @@ class ImageViewerInterface(Protocol):
         Raises
         ------
         TypeError
-            If the `center` is not a `SkyCoord` object or a tuple of floats, or if
-            the `fov` is not a angular `Quantity` or a float, or if there is no WCS
+            If the ``center`` is not a `~astropy.coordinates.SkyCoord` object or a tuple of floats, or if
+            the ``fov`` is not a angular `~astropy.units.Quantity` or a float, or if there is no WCS
             and the center or field of view require a WCS to be applied.
 
         ValueError
-            If `image_label` is not provided when there are multiple images loaded.
+            If ``image_label`` is not provided when there are multiple images loaded.
 
         `astropy.units.UnitTypeError`
-            If the `fov` is a `Quantity` but does not have an angular unit.
+            If the ``fov`` is a `~astropy.units.Quantity` but does not have an angular unit.
         """
         raise NotImplementedError
 
@@ -468,9 +468,9 @@ class ImageViewerInterface(Protocol):
         Parameters
         ----------
         sky_or_pixel : str, optional
-            If 'sky', the center will be returned as a `SkyCoord` object.
+            If 'sky', the center will be returned as a `~astropy.coordinates.SkyCoord` object.
             If 'pixel', the center will be returned as a tuple of pixel coordinates.
-            If `None`, the default behavior is to return the center as a `SkyCoord` if
+            If `None`, the default behavior is to return the center as a `~astropy.coordinates.SkyCoord` if
             possible, or as a tuple of floats if the image is in pixel coordinates and
             has no WCS information.
         image_label : str, optional
@@ -483,15 +483,15 @@ class ImageViewerInterface(Protocol):
         dict
             A dictionary containing the current viewport settings.
             The keys are 'center', 'fov', and 'image_label'.
-            - 'center' is an `astropy.coordinates.SkyCoord` object or a tuple of floats.
-            - 'fov' is an `astropy.units.Quantity` object or a float.
+            - 'center' is an `~astropy.coordinates.SkyCoord` object or a tuple of floats.
+            - 'fov' is an `~astropy.units.Quantity` object or a float.
             - 'image_label' is a string representing the label of the image.
 
         Raises
         ------
         ValueError
-            If the `sky_or_pixel` parameter is not one of 'sky', 'pixel', or `None`,
-            or if the `image_label` is not provided when there are multiple images
-            loaded, or if the `image_label` does not correspond to a loaded image.
+            If the ``sky_or_pixel`` parameter is not one of 'sky', 'pixel', or `None`,
+            or if the ``image_label`` is not provided when there are multiple images
+            loaded, or if the ``image_label`` does not correspond to a loaded image.
         """
         raise NotImplementedError
