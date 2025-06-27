@@ -258,9 +258,9 @@ class ImageViewerInterface(Protocol):
         catalog_label : str, optional
             The name of the marker set to use. If not given, a unique
             name will be generated.
-        catalog_style: dict, optional
+        catalog_style : dict, optional
             A dictionary that specifies the style of the markers used to
-            represent the catalog. See `~astro_image_display_api.image_viewer_logic.ImageViewerInterface.set_catalog_style`
+            represent the catalog. See `~astro_image_display_api.interface_definition.ImageViewerInterface.set_catalog_style`
             for details.
 
         Raises
