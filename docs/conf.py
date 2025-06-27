@@ -68,6 +68,7 @@ rst_epilog += """
 extensions += [
     "sphinx_design",
 ]
+extensions.remove("matplotlib.sphinxext.plot_directive")
 
 # -- Project information ------------------------------------------------------
 
