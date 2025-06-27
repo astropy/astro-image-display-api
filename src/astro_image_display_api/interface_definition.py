@@ -70,7 +70,7 @@ class ImageViewerInterface(Protocol):
         Raises
         ------
         TypeError
-            If the `cuts` parameter is not a tuple or an
+            If the ``cuts`` parameter is not a tuple or an
             `astropy.visualization.BaseInterval` object.
 
         ValueError
@@ -298,8 +298,8 @@ class ImageViewerInterface(Protocol):
         **kwargs
             Additional keyword arguments to pass to the marker style.
 
-        Notes
-        -----
+        Note
+        ----
         The following shapes are supported: "circle", "square", "crosshair", "plus",
         "diamond".
 
@@ -357,7 +357,7 @@ class ImageViewerInterface(Protocol):
         ------
         ValueError
             If the ``catalog_label`` is not provided when there are multiple
-            catalogs loaded, or if the `catalog_label` does not correspond to a
+            catalogs loaded, or if the ``catalog_label`` does not correspond to a
             loaded catalog.
 
         TypeError
