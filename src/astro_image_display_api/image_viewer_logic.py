@@ -299,7 +299,7 @@ class ImageViewerLogic:
 
         Parameters
         ----------
-        file : str or `astropy.io.fits.HDU`
+        file : str or array-like
             The FITS file to load. If a string, it can be a URL or a
             file path.
 
