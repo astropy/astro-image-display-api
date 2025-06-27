@@ -8,9 +8,6 @@ from astropy.table import Table
 from astropy.units import Quantity
 from astropy.visualization import BaseInterval, BaseStretch
 
-# Allowed locations for cursor display
-ALLOWED_CURSOR_LOCATIONS = ("top", "bottom", None)
-
 __all__ = [
     "ImageViewerInterface",
 ]
@@ -23,10 +20,6 @@ class ImageViewerInterface(Protocol):
     # do any checking at all of these types.
     image_width: int
     image_height: int
-    cursor: str
-
-    # Allowed locations for cursor display
-    ALLOWED_CURSOR_LOCATIONS: tuple = ALLOWED_CURSOR_LOCATIONS
 
     # The methods, grouped loosely by purpose
 
@@ -441,10 +434,10 @@ class ImageViewerInterface(Protocol):
             The center of the viewport. If not given, the current center is used.
         fov : `astropy.units.Quantity` or float, optional
             The field of view (FOV) of the viewport. If not given, the current FOV
-            is used. If a float is given, it is interpreted as a size in pixels. For viewers
-            that are not square, the FOV is interpreted as the size of the shorter side
-            of the viewer such that the FOV is guaranteed to be entirely visible
-            regardless of the aspect ratio of the viewer.
+            is used. If a float is given, it is interpreted as a size in pixels. For
+            viewers that are not square, the FOV is interpreted as the size of the
+            shorter side of the viewer such that the FOV is guaranteed to be entirely
+            visible regardless of the aspect ratio of the viewer.
         image_label : str, optional
             The label of the image to set the viewport for. If not given and there is
             only one image loaded, the viewport for that image is set. If there are

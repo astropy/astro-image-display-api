@@ -16,14 +16,10 @@ from astropy.visualization import (
 )
 from astropy.wcs import WCS
 
-from .interface_definition import ImageViewerInterface
-
 __all__ = ["ImageAPITest"]
 
 
 class ImageAPITest:
-    cursor_error_classes = ValueError
-
     @pytest.fixture
     def data(self):
         rng = np.random.default_rng(1234)
@@ -767,16 +763,6 @@ class ImageAPITest:
         # Same for getting the colormap without an image label
         with pytest.raises(ValueError, match="Multiple image labels defined"):
             self.image.get_colormap()
-
-    def test_cursor(self):
-        assert self.image.cursor in self.image.ALLOWED_CURSOR_LOCATIONS
-        assert set(ImageViewerInterface.ALLOWED_CURSOR_LOCATIONS) == set(
-            self.image.ALLOWED_CURSOR_LOCATIONS
-        )
-        with pytest.raises(self.cursor_error_classes):
-            self.image.cursor = "not a valid option"
-        self.image.cursor = "bottom"
-        assert self.image.cursor == "bottom"
 
     def test_save(self, tmp_path):
         filename = tmp_path / "woot.png"

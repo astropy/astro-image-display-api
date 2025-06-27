@@ -63,15 +63,10 @@ class ImageViewerLogic:
     image_width: int = 0
     image_height: int = 0
     zoom_level: float = 1
-    _cursor: str = ImageViewerInterface.ALLOWED_CURSOR_LOCATIONS[0]
     _cuts: BaseInterval | tuple[float, float] = AsymmetricPercentileInterval(
         upper_percentile=95
     )
     _stretch: BaseStretch = LinearStretch
-    # viewer: Any
-
-    # Allowed locations for cursor display
-    ALLOWED_CURSOR_LOCATIONS: tuple = ImageViewerInterface.ALLOWED_CURSOR_LOCATIONS
 
     # some internal variable for keeping track of viewer state
     _wcs: WCS | None = None
@@ -200,19 +195,6 @@ class ImageViewerLogic:
         return self._images[image_label].colormap
 
     get_colormap.__doc__ = ImageViewerInterface.get_colormap.__doc__
-
-    @property
-    def cursor(self) -> str:
-        return self._cursor
-
-    @cursor.setter
-    def cursor(self, value: str) -> None:
-        if value not in self.ALLOWED_CURSOR_LOCATIONS:
-            raise ValueError(
-                f"Cursor location {value} is not valid. Must be one of "
-                f"{self.ALLOWED_CURSOR_LOCATIONS}."
-            )
-        self._cursor = value
 
     # The methods, grouped loosely by purpose
 
