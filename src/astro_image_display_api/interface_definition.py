@@ -158,7 +158,7 @@ class ImageViewerInterface(Protocol):
         ----------
         map_name
             The name of the colormap to set. This should be a
-            valid colormap name from `Matplotlib`_;
+            valid colormap name from `Matplotlib <https://matplotlib.org/stable/gallery/color/colormap_reference.html>`_;
             not all backends will support
             all colormaps, so the viewer should handle errors gracefully.
         image_label : optional
@@ -171,8 +171,6 @@ class ImageViewerInterface(Protocol):
         ValueError
             If the ``map_name`` is not a valid colormap name or if the ``image_label``
             is not provided when there are multiple images loaded.
-
-        .. _Matplotlib: https://matplotlib.org/stable/gallery/color/colormap_reference.html
         """
         raise NotImplementedError
 
