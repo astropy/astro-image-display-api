@@ -124,7 +124,7 @@ html_theme_options.update(
 # A dictionary of values to pass into the template engine's context for all pages.
 html_context = {
     "default_mode": "dark",
-    "to_be_indexed": ["stable", "latest"],
+    "to_be_indexed": ["latest"],
     "is_development": dev,
     "github_user": "astropy",
     "github_repo": "astro-image-display-api",
@@ -183,8 +183,8 @@ man_pages = [("index", project.lower(), project + " Documentation", [author], 1)
 
 # -- Turn on nitpicky mode for sphinx (to warn about references not found) ----
 #
-# nitpicky = True
-# nitpick_ignore = []
+nitpicky = True
+nitpick_ignore = []
 #
 # Some warnings are impossible to suppress, and you can list specific references
 # that should be ignored in a nitpick-exceptions file which should be inside
