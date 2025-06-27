@@ -260,7 +260,7 @@ class ImageViewerInterface(Protocol):
             name will be generated.
         catalog_style: dict, optional
             A dictionary that specifies the style of the markers used to
-            represent the catalog. See `ImageViewerInterface.set_catalog_style`
+            represent the catalog. See `~astro_image_display_api.image_viewer_logic.ImageViewerInterface.set_catalog_style`
             for details.
 
         Raises
@@ -288,7 +288,7 @@ class ImageViewerInterface(Protocol):
         ----------
         shape : str, optional
             The shape of the markers. Default is ``'circle'``. The set of
-            supported shapes is listed below in the `Notes` section.
+            supported shapes is listed below in the *Note* section below.
         color : str, optional
             The color of the markers. Default is ``'red'``. Permitted colors are
             any CSS4 color name. CSS4 also permits hex RGB or RGBA colors.
