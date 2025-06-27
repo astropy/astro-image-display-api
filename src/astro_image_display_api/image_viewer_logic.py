@@ -24,6 +24,7 @@ from numpy.typing import ArrayLike
 
 from .interface_definition import ImageViewerInterface
 
+__all__ = ["ImageViewerLogic"]
 
 @dataclass
 class CatalogInfo:
