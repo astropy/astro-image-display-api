@@ -43,14 +43,17 @@ class ImageAPITest:
         return w
 
     @pytest.fixture
-    def catalog(self, wcs: WCS) -> Table:
+    def catalog(self, wcs: WCS, data: np.ndarray) -> Table:
         """
         A catalog fixture that returns an empty table with the
         expected columns.
         """
+        self.image.load_image(NDData(data=data, wcs=wcs))
+
         rng = np.random.default_rng(45328975)
-        x = rng.uniform(0, self.image.image_width, size=10)
-        y = rng.uniform(0, self.image.image_height, size=10)
+        
+        x = rng.uniform(0, self.image.get_shape().width, size=10)
+        y = rng.uniform(0, self.image.get_shape().height, size=10)
         coord = wcs.pixel_to_world(x, y)
 
         cat = Table(
@@ -70,7 +73,7 @@ class ImageAPITest:
         Subclasses MUST define ``image_widget_class`` -- doing so as a
         class variable does the trick.
         """
-        self.image = self.image_widget_class(image_width=250, image_height=100)
+        self.image = self.image_widget_class()
 
     def _assert_empty_catalog_table(self, table):
         assert isinstance(table, Table)
@@ -81,16 +84,10 @@ class ImageAPITest:
         marks = self.image.get_catalog_names()
         return set(marks)
 
-    def test_width_height(self):
-        assert self.image.image_width == 250
-        assert self.image.image_height == 100
-
-        width = 200
-        height = 300
-        self.image.image_width = width
-        self.image.image_height = height
-        assert self.image.image_width == width
-        assert self.image.image_height == height
+    def test_width_height(self, data: np.ndarray):
+        self.image.load_image(NDData(data=data))
+        assert self.image.get_shape().width == 150
+        assert self.image.get_shape().height == 100
 
     @pytest.mark.parametrize("load_type", ["fits", "nddata", "array"])
     def test_load(self, data, tmp_path, load_type):

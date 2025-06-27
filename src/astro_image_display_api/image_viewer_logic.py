@@ -22,7 +22,7 @@ from astropy.wcs import WCS
 from astropy.wcs.utils import proj_plane_pixel_scales
 from numpy.typing import ArrayLike
 
-from .interface_definition import ImageViewerInterface
+from .interface_definition import ImageViewerInterface, ImageShape
 
 
 @dataclass
@@ -48,6 +48,8 @@ class ViewportInfo:
     stretch: BaseStretch | None = None
     cuts: BaseInterval | tuple[numbers.Real, numbers.Real] | None = None
     colormap: str | None = None
+    image_width: int | None = None
+    image_height: int | None = None
 
 
 @dataclass
@@ -60,8 +62,6 @@ class ImageViewerLogic:
     # These are attributes, not methods. The type annotations are there
     # to make sure Protocol knows they are attributes. Python does not
     # do any checking at all of these types.
-    image_width: int = 0
-    image_height: int = 0
     zoom_level: float = 1
     _cuts: BaseInterval | tuple[float, float] = AsymmetricPercentileInterval(
         upper_percentile=95
@@ -197,6 +197,37 @@ class ImageViewerLogic:
     get_colormap.__doc__ = ImageViewerInterface.get_colormap.__doc__
 
     # The methods, grouped loosely by purpose
+
+    
+    def get_shape(self, image_label: str | None = None) -> ImageShape:
+        """
+        Get the shape (i.e., width and height in pixels) of the image.
+
+        Parameters
+        ----------
+        image_label : optional
+            The label of the image to get the shape for. If not given and there is
+            only one image loaded, the shape for that image is returned. If there are
+            multiple images and no label is provided, an error is raised.
+
+        Returns
+        -------
+        shape : `ImageShape`, a 2-tuple of ints
+            A named tuple containing the width and height of the image in pixels. 
+
+        Raises
+        ------
+        ValueError
+            If the `image_label` is not provided when there are multiple images loaded,
+            or if the `image_label` does not correspond to a loaded image.
+        """
+        image_label = self._resolve_image_label(image_label)
+        if image_label not in self._images:
+            raise ValueError(
+                f"Image label '{image_label}' not found. Please load an image first."
+            )
+        img = self._images[image_label]
+        return ImageShape(img.image_width, img.image_height)
 
     def get_catalog_style(self, catalog_label=None) -> dict[str, Any]:
         """
@@ -370,6 +401,9 @@ class ImageViewerLogic:
 
         # Deal with the viewport first
         height, width = image_data.shape
+        self._images[image_label].image_width = width
+        self._images[image_label].image_height = height
+
         # Center the image in the viewport and show the whole image.
         center = (width / 2, height / 2)
         fov = max(image_data.shape)
