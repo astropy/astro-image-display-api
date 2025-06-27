@@ -1,12 +1,15 @@
+import re
+
 from astropy.utils.data import get_pkg_data_contents
 
 from astro_image_display_api import ImageViewerInterface
 
 
-def test_api_test_class_completeness():
+def test_api_test_class_covers_all_attributes_and_only_those_attributes():
     """
     Test that the ImageWidgetAPITest class is complete and has tests
-    for all of the required methods and attributes.
+    for all of the required methods and attributes and does not access
+    any attributes or methods that are not part of the ImageViewerInterface.
     """
     # Get the attributes on the protocol
     required_attributes = ImageViewerInterface.__protocol_attrs__
@@ -15,11 +18,47 @@ def test_api_test_class_completeness():
     api_test_content = get_pkg_data_contents(
         "api_test.py", package="astro_image_display_api"
     )
+
+    # This is the way the test class is accessed in the api_test.py file.
+    image_viewer_name = "self.image"
+
+    # Get all of the methods and attributes that are accessed
+    # in the api_test.py file.
+    # We use a regex to find all occurrences of the image_viewer_name
+    # followed by a dot and then an attribute name.
+    # This will match both attributes and methods.
+    attributes_accessed_in_test_class = re.findall(
+        rf"{image_viewer_name.replace(".", r"\.")}\.([a-zA-Z_][a-zA-Z0-9_]*)",
+        api_test_content,
+    )
+
+    # Get the attribute/method names as a set
+    attributes_accessed_in_test_class = list(set(attributes_accessed_in_test_class))
+
+    # Make sure that the test class does not access any attributes
+    # or methods that are not part of the ImageViewerInterface.
+    attr_in_test_class_is_in_interface = []
+    for attr in attributes_accessed_in_test_class:
+        attr_in_test_class_is_in_interface.append(attr in required_attributes)
+
+    attr_not_present_in_interface = [
+        attr
+        for attr, present in zip(
+            attributes_accessed_in_test_class,
+            attr_in_test_class_is_in_interface,
+            strict=True,
+        )
+        if not present
+    ]
+
+    assert all(attr_in_test_class_is_in_interface), (
+        f"ImageWidgetAPITest accesses these attributes/methods that are not part of "
+        f"the ImageViewerInterface:\n{', '.join(attr_not_present_in_interface)}\n"
+    )
     # Loop over the attributes and check that the test class has a method
     # for each one whose name starts with test_ and ends with the attribute
     # name.
     attr_present = []
-    image_viewer_name = "self.image"
     for attr in required_attributes:
         attr_present.append(f"{image_viewer_name}.{attr}" in api_test_content)
 
