@@ -2,6 +2,7 @@ import numbers
 import os
 from abc import abstractmethod
 from typing import Any, Protocol, runtime_checkable
+from collections import namedtuple
 
 from astropy.coordinates import SkyCoord
 from astropy.table import Table
@@ -10,17 +11,13 @@ from astropy.visualization import BaseInterval, BaseStretch
 
 __all__ = [
     "ImageViewerInterface",
+    "ImageShape",
 ]
 
+ImageShape = namedtuple("ImageShape", ["width", "height"])
 
 @runtime_checkable
 class ImageViewerInterface(Protocol):
-    # These are attributes, not methods. The type annotations are there
-    # to make sure Protocol knows they are attributes. Python does not
-    # do any checking at all of these types.
-    image_width: int
-    image_height: int
-
     # The methods, grouped loosely by purpose
 
     # Method for loading image data
@@ -197,6 +194,31 @@ class ImageViewerInterface(Protocol):
         ------
         ValueError
             If the `image_label` is not provided when there are multiple images loaded
+            or if the `image_label` does not correspond to a loaded image.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_shape(self, image_label: str | None = None) -> ImageShape:
+        """
+        Get the shape (i.e., width and height in pixels) of the image.
+
+        Parameters
+        ----------
+        image_label : optional
+            The label of the image to get the shape for. If not given and there is
+            only one image loaded, the shape for that image is returned. If there are
+            multiple images and no label is provided, an error is raised.
+
+        Returns
+        -------
+        shape : `ImageShape`, a 2-tuple of ints
+            A named tuple containing the width and height of the image in pixels. 
+
+        Raises
+        ------
+        ValueError
+            If the `image_label` is not provided when there are multiple images loaded,
             or if the `image_label` does not correspond to a loaded image.
         """
         raise NotImplementedError
