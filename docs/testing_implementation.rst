@@ -12,7 +12,7 @@ Astronomical Image Display API (AIDA). There are two things you need to test:
 2. To test the functionality of your implementation, we provide the class
    :py:class:`~astro_image_display_api.api_test.ImageAPITest`.
    To use it, create a subclass of :py:class:`~astro_image_display_api.api_test.ImageAPITest` in your test suite, and define
-   a single class attribute `image_widget_class`. See
+   a single class attribute ``image_widget_class``. See
    :ref:`test_example` for an example of how to do this.
 
 These tests *do not* test the actual image display functionality of your package, nor
