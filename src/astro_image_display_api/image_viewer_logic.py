@@ -332,6 +332,18 @@ class ImageViewerLogic:
         # working with the new image.
         self._wcs = self._images[image_label].wcs
 
+
+    def get_image(self, image_label: str | None = None):
+        image_label = self._resolve_image_label(image_label)
+        if image_label not in self._images:
+            raise ValueError(
+                f"Image label '{image_label}' not found. Please load an image first."
+            )
+        return self._images[image_label]
+    
+    def get_image_labels(self):
+        return tuple(self._images.keys())
+
     def _determine_largest_dimension(self, shape: tuple[int, int]) -> int:
         """
         Determine which index is the largest dimension.

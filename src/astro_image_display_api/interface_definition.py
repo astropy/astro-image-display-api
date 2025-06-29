@@ -80,13 +80,13 @@ class ImageViewerInterface(Protocol):
     @abstractmethod
     def get_image_labels(
         self,
-    ) -> list[str]: 
+    ) -> tuple[str]: 
         """
         Get the labels of the loaded images.
 
         Returns
         -------
-        image_labels: list of str
+        image_labels: tuple of str
             The labels of the loaded images.
         """
         raise NotImplementedError
