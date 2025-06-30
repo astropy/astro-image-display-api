@@ -822,3 +822,97 @@ class ImageAPITest:
 
         with pytest.raises(ValueError, match="[Ii]mage label.*not found"):
             self.image.get_image(image_label="not a valid label")
+
+    def test_all_methods_accept_additional_kwargs(self, data, catalog):
+        """
+        Make sure all methods accept additional keyword arguments
+        that are not defined in the protocol.
+        """
+        from astro_image_display_api import ImageViewerInterface
+
+        all_methods_and_attributes = ImageViewerInterface.__protocol_attrs__
+
+        all_methods = [
+            method
+            for method in all_methods_and_attributes
+            if callable(getattr(self.image, method))
+        ]
+
+        # Make a small dictionary keys that are random characters
+        additional_kwargs = {k: f"value{k}" for k in ["fsda", "urioeh", "m898h]"]}
+
+        # Make a dictionary of the required arguments for any methods that have required
+        # argument
+        required_args = dict(
+            load_image=data,
+            set_cuts=(10, 100),
+            set_stretch=LogStretch(),
+            set_colormap="viridis",
+            save="test.png",
+            load_catalog=catalog,
+        )
+
+        failed_methods = []
+
+        # Take out the loading methods because they must happen first and take out
+        # remove_catalog because it must happen last.
+        all_methods = list(
+            set(all_methods) - set(["load_image", "load_catalog", "remove_catalog"])
+        )
+
+        # Load an image and a catalog first since other methods require these
+        # have been done
+        try:
+            self.image.load_image(required_args["load_image"], **additional_kwargs)
+        except TypeError as e:
+            if "required positional argument" not in str(e):
+                # If the error is not about a missing required argument, we
+                # consider it a failure.
+                failed_methods.append("load_image")
+            else:
+                raise e
+
+        try:
+            self.image.load_catalog(required_args["load_catalog"], **additional_kwargs)
+        except TypeError as e:
+            if "required positional argument" not in str(e):
+                # If the error is not about a missing required argument, we
+                # consider it a failure.
+                failed_methods.append("load_catalog")
+            else:
+                raise e
+
+        print("\n".join(all_methods))
+
+        if not failed_methods:
+            # No point in running some of these if setting image or catalog has failed
+            for method in all_methods + ["remove_catalog"]:
+                # Call each method with the required arguments and additional kwargs
+                # Accumulate the failures and report them at the end
+                try:
+                    if method in required_args:
+                        # If the method has required arguments, call it with those
+                        getattr(self.image, method)(
+                            required_args[method], **additional_kwargs
+                        )
+                    else:
+                        # If the method does not have required arguments, just call it
+                        # with additional kwargs
+                        getattr(self.image, method)(**additional_kwargs)
+                except TypeError as e:
+                    if "required positional argument" not in str(e):
+                        # If the error is not about a missing required argument, we
+                        # consider it a failure.
+                        failed_methods.append(method)
+                    else:
+                        raise e
+
+        else:
+            failed_methods.append(
+                "No other methods were tests because the ones above failed."
+            )
+
+        assert not failed_methods, (
+            "The following methods failed when called with additional kwargs:\n\t"
+            f"{'\n\t'.join(failed_methods)}"
+        )
