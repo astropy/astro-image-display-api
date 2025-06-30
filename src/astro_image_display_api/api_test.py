@@ -438,6 +438,21 @@ class ImageAPITest:
         del retrieved_style["catalog_label"]  # Remove the label
         assert retrieved_style == style
 
+    def test_catalog_has_style_after_loading(self, catalog):
+        # Check that loading a catalog sets a default style for that catalog.
+        self.image.load_catalog(catalog, catalog_label="test1")
+
+        retrieved_style = self.image.get_catalog_style(catalog_label="test1")
+        assert isinstance(retrieved_style, dict)
+        assert "color" in retrieved_style
+        assert "shape" in retrieved_style
+        assert "size" in retrieved_style
+
+        # Loading again should have the same style
+        self.image.load_catalog(catalog, catalog_label="test1")
+        retrieved_style2 = self.image.get_catalog_style(catalog_label="test1")
+        assert retrieved_style2 == retrieved_style
+
     @pytest.mark.parametrize("catalog_label", ["test1", None])
     def test_load_get_single_catalog_with_without_label(self, catalog, catalog_label):
         # Make sure we can get a single catalog with or without a label.

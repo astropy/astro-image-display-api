@@ -26,6 +26,7 @@ from .interface_definition import ImageViewerInterface
 
 __all__ = ["ImageViewerLogic"]
 
+
 @dataclass
 class CatalogInfo:
     """
@@ -523,7 +524,11 @@ class ImageViewerLogic:
         # Ensure a catalog always has a style
         if catalog_style is None:
             if not self._catalogs[catalog_label].style:
+                # No style has been set, so use the default style
                 catalog_style = self._default_catalog_style.copy()
+            else:
+                # Use the existing style
+                catalog_style = self._catalogs[catalog_label].style.copy()
 
         self._catalogs[catalog_label].style = catalog_style
 
