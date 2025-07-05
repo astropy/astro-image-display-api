@@ -60,12 +60,6 @@ class ImageViewerInterface(Protocol):
             The label of the image to set the cuts for. If not given and there is
             only one image loaded, that image is returned.
 
-        Raises
-        ------
-        ValueError
-            If the `image_label` is not provided when there are multiple images loaded,
-            or if the `image_label` does not correspond to a loaded image.
-
         Returns
         -------
         image_data : Any
@@ -74,13 +68,20 @@ class ImageViewerInterface(Protocol):
             with `astropy.nddata.NDData` is preferred, but not required. It is expected
             that the returned data can be re-loaded into the viewer using
             `load_image`, however.
+
+        Raises
+        ------
+        ValueError
+            If the `image_label` is not provided when there are multiple images loaded,
+            or if the `image_label` does not correspond to a loaded image.
+
         """
         raise NotImplementedError
-        
+
     @abstractmethod
     def get_image_labels(
         self,
-    ) -> tuple[str]: 
+    ) -> tuple[str]:
         """
         Get the labels of the loaded images.
 
