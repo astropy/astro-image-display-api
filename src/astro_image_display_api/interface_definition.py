@@ -49,6 +49,50 @@ class ImageViewerInterface(Protocol):
 
     # Setting and getting image properties
     @abstractmethod
+    def get_image(
+        self,
+        image_label: str | None = None,
+    ) -> Any:
+        """
+        Parameters
+        ----------
+        image_label : optional
+            The label of the image to set the cuts for. If not given and there is
+            only one image loaded, that image is returned.
+
+        Returns
+        -------
+        image_data : Any
+            The data of the loaded image. The exact type of the data is not specified,
+            and different backends may return different types. A return type compatible
+            with `astropy.nddata.NDData` is preferred, but not required. It is expected
+            that the returned data can be re-loaded into the viewer using
+            `load_image`, however.
+
+        Raises
+        ------
+        ValueError
+            If the ``image_label`` is not provided when there are multiple images
+            loaded, or if the ``image_label`` does not correspond to a loaded image.
+
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_image_labels(
+        self,
+    ) -> tuple[str]:
+        """
+        Get the labels of the loaded images.
+
+        Returns
+        -------
+        image_labels: tuple of str
+            The labels of the loaded images.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def set_cuts(
         self,
         cuts: tuple[numbers.Real, numbers.Real] | BaseInterval,
@@ -75,8 +119,8 @@ class ImageViewerInterface(Protocol):
             `astropy.visualization.BaseInterval` object.
 
         ValueError
-            If the ``image_label`` is not provided when there are multiple images loaded,
-            or if the ``image_label`` does not correspond to a loaded image.
+            If the ``image_label`` is not provided when there are multiple images
+            loaded, or if the ``image_label`` does not correspond to a loaded image.
 
         Notes
         -----
@@ -105,8 +149,8 @@ class ImageViewerInterface(Protocol):
         Raises
         ------
         ValueError
-            If the ``image_label`` is not provided when there are multiple images loaded,
-            or if the ``image_label`` does not correspond to a loaded image.
+            If the ``image_label`` is not provided when there are multiple images
+            loaded, or if the ``image_label`` does not correspond to a loaded image.
 
         Notes
         -----
@@ -132,7 +176,8 @@ class ImageViewerInterface(Protocol):
         Raises
         ------
         TypeError
-            If the ``stretch`` is not a valid `~astropy.visualization.BaseStretch` object.
+            If the ``stretch`` is not a valid `~astropy.visualization.BaseStretch`
+            object.
 
         ValueError
             If the ``image_label`` is not provided when there are multiple images loaded
@@ -291,7 +336,8 @@ class ImageViewerInterface(Protocol):
             name will be generated.
         catalog_style : dict, optional
             A dictionary that specifies the style of the markers used to
-            represent the catalog. See `~astro_image_display_api.interface_definition.ImageViewerInterface.set_catalog_style`
+            represent the catalog. See
+            `~astro_image_display_api.interface_definition.ImageViewerInterface.set_catalog_style`
             for details.
 
         Raises
@@ -497,15 +543,17 @@ class ImageViewerInterface(Protocol):
         Raises
         ------
         TypeError
-            If the ``center`` is not a `~astropy.coordinates.SkyCoord` object or a tuple of floats, or if
-            the ``fov`` is not a angular `~astropy.units.Quantity` or a float, or if there is no WCS
-            and the center or field of view require a WCS to be applied.
+            If the ``center`` is not a `~astropy.coordinates.SkyCoord` object or a tuple
+            of floats, or if the ``fov`` is not a angular `~astropy.units.Quantity` or a
+            float, or if there is no WCS and the center or field of view require a WCS
+            to be applied.
 
         ValueError
             If ``image_label`` is not provided when there are multiple images loaded.
 
         `astropy.units.UnitTypeError`
-            If the ``fov`` is a `~astropy.units.Quantity` but does not have an angular unit.
+            If the ``fov`` is a `~astropy.units.Quantity` but does not have an angular
+            unit.
 
         Notes
         -----
@@ -524,9 +572,11 @@ class ImageViewerInterface(Protocol):
         Parameters
         ----------
         sky_or_pixel : str, optional
-            If 'sky', the center will be returned as a `~astropy.coordinates.SkyCoord` object.
-            If 'pixel', the center will be returned as a tuple of pixel coordinates.
-            If `None`, the default behavior is to return the center as a `~astropy.coordinates.SkyCoord` if
+            If 'sky', the center will be returned as a `~astropy.coordinates.SkyCoord`
+            object. If 'pixel', the center will be returned as a tuple of pixel
+            coordinates.
+            If `None`, the default behavior is to return the center as a
+            `~astropy.coordinates.SkyCoord` if
             possible, or as a tuple of floats if the image is in pixel coordinates and
             has no WCS information.
         image_label : str, optional
@@ -539,7 +589,8 @@ class ImageViewerInterface(Protocol):
         dict
             A dictionary containing the current viewport settings.
             The keys are 'center', 'fov', and 'image_label'.
-            - 'center' is an `~astropy.coordinates.SkyCoord` object or a tuple of floats.
+            - 'center' is an `~astropy.coordinates.SkyCoord` object or a tuple of
+            floats.
             - 'fov' is an `~astropy.units.Quantity` object or a float.
             - 'image_label' is a string representing the label of the image.
 

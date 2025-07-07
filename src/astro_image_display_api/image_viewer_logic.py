@@ -50,6 +50,7 @@ class ViewportInfo:
     stretch: BaseStretch | None = None
     cuts: BaseInterval | tuple[numbers.Real, numbers.Real] | None = None
     colormap: str | None = None
+    data: ArrayLike | NDData | CCDData | None = None
 
 
 @dataclass
@@ -332,6 +333,17 @@ class ImageViewerLogic:
         # working with the new image.
         self._wcs = self._images[image_label].wcs
 
+    def get_image(self, image_label: str | None = None):
+        image_label = self._resolve_image_label(image_label)
+        if image_label not in self._images:
+            raise ValueError(
+                f"Image label '{image_label}' not found. Please load an image first."
+            )
+        return self._images[image_label].data
+
+    def get_image_labels(self):
+        return tuple(self._images.keys())
+
     def _determine_largest_dimension(self, shape: tuple[int, int]) -> int:
         """
         Determine which index is the largest dimension.
@@ -401,6 +413,7 @@ class ImageViewerLogic:
     def _load_fits(self, file: str | os.PathLike, image_label: str | None) -> None:
         ccd = CCDData.read(file)
         self._images[image_label].wcs = ccd.wcs
+        self._images[image_label].data = ccd
         self._initialize_image_viewport_stretch_cuts(ccd.data, image_label)
 
     def _load_array(self, array: ArrayLike, image_label: str | None) -> None:
@@ -416,6 +429,7 @@ class ImageViewerLogic:
         self._images[image_label].largest_dimension = self._determine_largest_dimension(
             array.shape
         )
+        self._images[image_label].data = array
         self._initialize_image_viewport_stretch_cuts(array, image_label)
 
     def _load_nddata(self, data: NDData, image_label: str | None) -> None:
@@ -428,6 +442,7 @@ class ImageViewerLogic:
             The NDData object to load.
         """
         self._images[image_label].wcs = data.wcs
+        self._images[image_label].data = data
         self._images[image_label].largest_dimension = self._determine_largest_dimension(
             data.data.shape
         )

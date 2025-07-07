@@ -797,3 +797,28 @@ class ImageAPITest:
 
         # Using overwrite should save successfully
         self.image.save(filename, overwrite=True)
+
+    def test_get_image_labels(self, data):
+        # the test viewer begins with a default empty image
+        assert len(self.image.get_image_labels()) == 1
+        assert self.image.get_image_labels()[0] is None
+        assert isinstance(self.image.get_image_labels(), tuple)
+
+        self.image.load_image(data, image_label="test")
+        assert len(self.image.get_image_labels()) == 2
+        assert self.image.get_image_labels()[-1] == "test"
+
+    def test_get_image(self, data):
+        self.image.load_image(data, image_label="test")
+
+        # currently the type is not specified in the API
+        assert self.image.get_image() is not None
+        assert self.image.get_image(image_label="test") is not None
+
+        retrieved_image = self.image.get_image(image_label="test")
+
+        self.image.load_image(retrieved_image, image_label="another test")
+        assert self.image.get_image(image_label="another test") is not None
+
+        with pytest.raises(ValueError, match="[Ii]mage label.*not found"):
+            self.image.get_image(image_label="not a valid label")
