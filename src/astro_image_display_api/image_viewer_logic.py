@@ -84,6 +84,9 @@ class ImageViewerLogic:
     _center: tuple[numbers.Real, numbers.Real] = (0.0, 0.0)
 
     def __post_init__(self):
+        self._set_up_catalog_image_dicts()
+
+    def _set_up_catalog_image_dicts(self):
         # This is a dictionary of marker sets. The keys are the names of the
         # marker sets, and the values are the tables containing the markers.
         self._catalogs = defaultdict(CatalogInfo)
