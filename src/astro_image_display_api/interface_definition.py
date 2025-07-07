@@ -590,7 +590,7 @@ class ImageViewerInterface(Protocol):
             A dictionary containing the current viewport settings.
             The keys are 'center', 'fov', and 'image_label'.
             - 'center' is an `~astropy.coordinates.SkyCoord` object or a tuple of
-              floats.
+            floats.
             - 'fov' is an `~astropy.units.Quantity` object or a float.
             - 'image_label' is a string representing the label of the image.
 
