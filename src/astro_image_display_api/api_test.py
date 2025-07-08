@@ -906,3 +906,25 @@ class ImageAPITest:
             "The following methods failed when called with additional kwargs:\n\t"
             f"{'\n\t'.join(failed_methods)}"
         )
+
+    def test_every_method_attribute_has_docstring(self):
+        """
+        Check that every method and attribute in the protocol has a docstring.
+        """
+        from astro_image_display_api import ImageViewerInterface
+
+        all_methods_and_attributes = ImageViewerInterface.__protocol_attrs__
+
+        method_attrs_no_docs = []
+
+        for method in all_methods_and_attributes:
+            attr = getattr(self.image, method)
+            # Make list of methods and attributes that have no docstring
+            # and assert that list is empty at the end of the test.
+            if not attr.__doc__:
+                method_attrs_no_docs.append(method)
+
+        assert not method_attrs_no_docs, (
+            "The following methods and attributes have no docstring:\n\t"
+            f"{'\n\t'.join(method_attrs_no_docs)}"
+        )
