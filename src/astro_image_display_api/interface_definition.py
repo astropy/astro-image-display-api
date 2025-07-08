@@ -85,13 +85,13 @@ class ImageViewerInterface(Protocol):
         """
         raise NotImplementedError
 
+    @property
     @abstractmethod
-    def get_image_labels(
+    def image_labels(
         self,
-        **kwargs,
-    ) -> tuple[str]:
+    ) -> tuple[str, ...]:
         """
-        Get the labels of the loaded images.
+        Labels of the loaded images.
 
         Returns
         -------
@@ -547,10 +547,11 @@ class ImageViewerInterface(Protocol):
         """
         raise NotImplementedError
 
+    @property
     @abstractmethod
-    def get_catalog_names(self) -> list[str]:
+    def catalog_names(self) -> tuple[str, ...]:
         """
-        Get the names of the loaded catalogs.
+        Names of the loaded catalogs.
 
         Returns
         -------
