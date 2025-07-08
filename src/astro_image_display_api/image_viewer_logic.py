@@ -371,11 +371,11 @@ class ImageViewerLogic:
             )
         return self._images[image_label].data
 
-    def get_image_labels(
-        self,
-        **kwargs,  # noqa: ARG002
-    ) -> tuple[str, ...]:
-        return tuple(self._images.keys())
+    @property
+    def image_labels(self) -> tuple[str, ...]:
+        return tuple(k for k in self._images.keys() if k is not None)
+
+    image_labels.__doc__ = ImageViewerInterface.image_labels.__doc__
 
     def _determine_largest_dimension(self, shape: tuple[int, int]) -> int:
         """
@@ -647,13 +647,11 @@ class ImageViewerLogic:
 
     get_catalog.__doc__ = ImageViewerInterface.get_catalog.__doc__
 
-    def get_catalog_names(
-        self,
-        **kwargs,  # noqa: ARG002
-    ) -> list[str]:
-        return list(self._user_catalog_labels())
+    @property
+    def catalog_names(self) -> tuple[str, ...]:
+        return tuple(self._user_catalog_labels())
 
-    get_catalog_names.__doc__ = ImageViewerInterface.get_catalog_names.__doc__
+    catalog_names.__doc__ = ImageViewerInterface.catalog_names.__doc__
 
     # Methods that modify the view
     def set_viewport(

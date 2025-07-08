@@ -78,7 +78,7 @@ class ImageAPITest:
         assert sorted(table.colnames) == sorted(["x", "y", "coord"])
 
     def _get_catalog_names_as_set(self):
-        marks = self.image.get_catalog_names()
+        marks = self.image.catalog_names
         return set(marks)
 
     def test_width_height(self):
@@ -498,7 +498,7 @@ class ImageAPITest:
             catalog_label="test2",
         )
 
-        assert sorted(self.image.get_catalog_names()) == ["test1", "test2"]
+        assert sorted(self.image.catalog_names) == ["test1", "test2"]
 
         # No guarantee markers will come back in the same order, so sort them.
         t1 = self.image.get_catalog(catalog_label="test1")
@@ -522,7 +522,7 @@ class ImageAPITest:
         # other one without a label.
         self.image.remove_catalog(catalog_label="test1")
         # Make sure test1 is really gone.
-        assert self.image.get_catalog_names() == ["test2"]
+        assert self.image.catalog_names == ("test2",)
 
         # Get without a catalog
         t2 = self.image.get_catalog()
@@ -798,15 +798,14 @@ class ImageAPITest:
         # Using overwrite should save successfully
         self.image.save(filename, overwrite=True)
 
-    def test_get_image_labels(self, data):
+    def test_image_labels(self, data):
         # the test viewer begins with a default empty image
-        assert len(self.image.get_image_labels()) == 1
-        assert self.image.get_image_labels()[0] is None
-        assert isinstance(self.image.get_image_labels(), tuple)
+        assert len(self.image.image_labels) == 0
+        assert isinstance(self.image.image_labels, tuple)
 
         self.image.load_image(data, image_label="test")
-        assert len(self.image.get_image_labels()) == 2
-        assert self.image.get_image_labels()[-1] == "test"
+        assert len(self.image.image_labels) == 1
+        assert self.image.image_labels[-1] == "test"
 
     def test_get_image(self, data):
         self.image.load_image(data, image_label="test")
