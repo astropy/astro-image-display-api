@@ -55,6 +55,7 @@ class ImageViewerInterface(Protocol):
     def get_image(
         self,
         image_label: str | None = None,
+        **kwargs,
     ) -> Any:
         """
         Parameters
@@ -62,6 +63,9 @@ class ImageViewerInterface(Protocol):
         image_label : optional
             The label of the image to set the cuts for. If not given and there is
             only one image loaded, that image is returned.
+
+        **kwargs
+            Additional keyword arguments that may be used by the viewer.
 
         Returns
         -------
@@ -84,6 +88,7 @@ class ImageViewerInterface(Protocol):
     @abstractmethod
     def get_image_labels(
         self,
+        **kwargs,
     ) -> tuple[str]:
         """
         Get the labels of the loaded images.

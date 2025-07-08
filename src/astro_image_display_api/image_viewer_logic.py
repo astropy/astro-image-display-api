@@ -361,7 +361,9 @@ class ImageViewerLogic:
         # working with the new image.
         self._wcs = self._images[image_label].wcs
 
-    def get_image(self, image_label: str | None = None):
+    def get_image(
+        self, image_label: str | None = None, **kwargs  # noqa: ARG002
+    ) -> ArrayLike | NDData | CCDData:
         image_label = self._resolve_image_label(image_label)
         if image_label not in self._images:
             raise ValueError(
@@ -369,7 +371,10 @@ class ImageViewerLogic:
             )
         return self._images[image_label].data
 
-    def get_image_labels(self):
+    def get_image_labels(
+        self,
+        **kwargs,  # noqa: ARG002
+    ) -> tuple[str, ...]:
         return tuple(self._images.keys())
 
     def _determine_largest_dimension(self, shape: tuple[int, int]) -> int:
