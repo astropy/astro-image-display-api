@@ -1,5 +1,4 @@
 import numbers
-import os
 
 import numpy as np
 import pytest
@@ -829,8 +828,6 @@ class ImageAPITest:
         Make sure all methods accept additional keyword arguments
         that are not defined in the protocol.
         """
-        # Run in a temperature directory since we are saving an image
-        os.chdir(tmp_path)
         from astro_image_display_api import ImageViewerInterface
 
         all_methods_and_attributes = ImageViewerInterface.__protocol_attrs__
@@ -851,7 +848,7 @@ class ImageAPITest:
             set_cuts=(10, 100),
             set_stretch=LogStretch(),
             set_colormap="viridis",
-            save="test.png",
+            save=tmp_path / "test.png",
             load_catalog=catalog,
         )
 
