@@ -53,19 +53,27 @@ class ViewportInfo:
     data: ArrayLike | NDData | CCDData | None = None
 
 
+def docs_from_interface(cls):
+    """
+    Decorator to copy the docstrings from the interface methods to the
+    methods in the class.
+    """
+    for name, method in cls.__dict__.items():
+        if not name.startswith("_"):
+            interface_method = getattr(ImageViewerInterface, name, None)
+            if interface_method:
+                method.__doc__ = interface_method.__doc__
+    return cls
+
+
 @dataclass
+@docs_from_interface
 class ImageViewerLogic:
     """
     This viewer does not do anything except making changes to its internal
     state to simulate the behavior of a real viewer.
     """
 
-    # These are attributes, not methods. The type annotations are there
-    # to make sure Protocol knows they are attributes. Python does not
-    # do any checking at all of these types.
-    image_width: int = 0
-    image_height: int = 0
-    zoom_level: float = 1
     _cuts: BaseInterval | tuple[float, float] = AsymmetricPercentileInterval(
         upper_percentile=95
     )
@@ -206,8 +214,6 @@ class ImageViewerLogic:
             )
         self._images[image_label].colormap = map_name
 
-    set_colormap.__doc__ = ImageViewerInterface.set_colormap.__doc__
-
     def get_colormap(
         self,
         image_label: str | None = None,
@@ -220,8 +226,6 @@ class ImageViewerLogic:
             )
         return self._images[image_label].colormap
 
-    get_colormap.__doc__ = ImageViewerInterface.get_colormap.__doc__
-
     # The methods, grouped loosely by purpose
 
     def get_catalog_style(
@@ -229,19 +233,6 @@ class ImageViewerLogic:
         catalog_label=None,
         **kwargs,  # noqa: ARG002
     ) -> dict[str, Any]:
-        """
-        Get the style for the catalog.
-
-        Parameters
-        ----------
-        catalog_label : str, optional
-            The label of the catalog. Default is ``None``.
-
-        Returns
-        -------
-        dict
-            The style for the catalog.
-        """
         catalog_label = self._resolve_catalog_label(catalog_label)
 
         style = self._catalogs[catalog_label].style.copy()
@@ -256,22 +247,6 @@ class ImageViewerLogic:
         size: float = 5,
         **kwargs,
     ) -> None:
-        """
-        Set the style for the catalog.
-
-        Parameters
-        ----------
-        catalog_label : str, optional
-            The label of the catalog.
-        shape : str, optional
-            The shape of the markers.
-        color : str, optional
-            The color of the markers.
-        size : float, optional
-            The size of the markers.
-        **kwargs
-            Additional keyword arguments to pass to the marker style.
-        """
         catalog_label = self._resolve_catalog_label(catalog_label)
 
         if self._catalogs[catalog_label].data is None:
@@ -324,18 +299,6 @@ class ImageViewerLogic:
         image_label: str | None = None,
         **kwargs,  # noqa: ARG002
     ) -> None:
-        """
-        Load a FITS file into the viewer.
-
-        Parameters
-        ----------
-        file : str or array-like
-            The FITS file to load. If a string, it can be a URL or a
-            file path.
-
-        image_label : str, optional
-            A label for the image.
-        """
         image_label = self._resolve_image_label(image_label)
 
         # Delete the current viewport if it exists
@@ -374,8 +337,6 @@ class ImageViewerLogic:
     @property
     def image_labels(self) -> tuple[str, ...]:
         return tuple(k for k in self._images.keys() if k is not None)
-
-    image_labels.__doc__ = ImageViewerInterface.image_labels.__doc__
 
     def _determine_largest_dimension(self, shape: tuple[int, int]) -> int:
         """
@@ -497,19 +458,6 @@ class ImageViewerLogic:
         overwrite: bool = False,
         **kwargs,  # noqa: ARG002
     ) -> None:
-        """
-        Save the current view to a file.
-
-        Parameters
-        ----------
-        filename : str or `os.PathLike`
-            The file to save to. The format is determined by the
-            extension.
-
-        overwrite : bool, optional
-            If `True`, overwrite the file if it exists. Default is
-            `False`.
-        """
         p = Path(filename)
         if p.exists() and not overwrite:
             raise FileExistsError(
@@ -586,8 +534,6 @@ class ImageViewerLogic:
 
         self._catalogs[catalog_label].style = catalog_style
 
-    load_catalog.__doc__ = ImageViewerInterface.load_catalog.__doc__
-
     def remove_catalog(
         self,
         catalog_label: str | None = None,
@@ -645,13 +591,9 @@ class ImageViewerLogic:
 
         return result
 
-    get_catalog.__doc__ = ImageViewerInterface.get_catalog.__doc__
-
     @property
     def catalog_names(self) -> tuple[str, ...]:
         return tuple(self._user_catalog_labels())
-
-    catalog_names.__doc__ = ImageViewerInterface.catalog_names.__doc__
 
     # Methods that modify the view
     def set_viewport(
@@ -728,8 +670,6 @@ class ImageViewerLogic:
         self._images[image_label].center = center
         self._images[image_label].fov = fov
 
-    set_viewport.__doc__ = ImageViewerInterface.set_viewport.__doc__
-
     def get_viewport(
         self,
         sky_or_pixel: str | None = None,
@@ -805,5 +745,3 @@ class ImageViewerLogic:
                 fov = viewport.fov
 
         return dict(center=center, fov=fov, image_label=image_label)
-
-    get_viewport.__doc__ = ImageViewerInterface.get_viewport.__doc__

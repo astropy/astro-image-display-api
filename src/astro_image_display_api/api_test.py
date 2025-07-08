@@ -18,12 +18,14 @@ from astropy.wcs import WCS
 
 __all__ = ["ImageAPITest"]
 
+DEFAULT_IMAGE_SHAPE = (100, 150)
+
 
 class ImageAPITest:
     @pytest.fixture
     def data(self):
         rng = np.random.default_rng(1234)
-        return rng.random((100, 150))
+        return rng.random(DEFAULT_IMAGE_SHAPE)
 
     @pytest.fixture
     def wcs(self):
@@ -49,8 +51,8 @@ class ImageAPITest:
         expected columns.
         """
         rng = np.random.default_rng(45328975)
-        x = rng.uniform(0, self.image.image_width, size=10)
-        y = rng.uniform(0, self.image.image_height, size=10)
+        x = rng.uniform(0, DEFAULT_IMAGE_SHAPE[0], size=10)
+        y = rng.uniform(0, DEFAULT_IMAGE_SHAPE[1], size=10)
         coord = wcs.pixel_to_world(x, y)
 
         cat = Table(
@@ -70,7 +72,7 @@ class ImageAPITest:
         Subclasses MUST define ``image_widget_class`` -- doing so as a
         class variable does the trick.
         """
-        self.image = self.image_widget_class(image_width=250, image_height=100)
+        self.image = self.image_widget_class()
 
     def _assert_empty_catalog_table(self, table):
         assert isinstance(table, Table)
@@ -80,17 +82,6 @@ class ImageAPITest:
     def _get_catalog_names_as_set(self):
         marks = self.image.catalog_names
         return set(marks)
-
-    def test_width_height(self):
-        assert self.image.image_width == 250
-        assert self.image.image_height == 100
-
-        width = 200
-        height = 300
-        self.image.image_width = width
-        self.image.image_height = height
-        assert self.image.image_width == width
-        assert self.image.image_height == height
 
     @pytest.mark.parametrize("load_type", ["fits", "nddata", "array"])
     def test_load(self, data, tmp_path, load_type):
@@ -914,4 +905,26 @@ class ImageAPITest:
         assert not failed_methods, (
             "The following methods failed when called with additional kwargs:\n\t"
             f"{'\n\t'.join(failed_methods)}"
+        )
+
+    def test_every_method_attribute_has_docstring(self):
+        """
+        Check that every method and attribute in the protocol has a docstring.
+        """
+        from astro_image_display_api import ImageViewerInterface
+
+        all_methods_and_attributes = ImageViewerInterface.__protocol_attrs__
+
+        method_attrs_no_docs = []
+
+        for method in all_methods_and_attributes:
+            attr = getattr(self.image, method)
+            # Make list of methods and attributes that have no docstring
+            # and assert that list is empty at the end of the test.
+            if not attr.__doc__:
+                method_attrs_no_docs.append(method)
+
+        assert not method_attrs_no_docs, (
+            "The following methods and attributes have no docstring:\n\t"
+            f"{'\n\t'.join(method_attrs_no_docs)}"
         )
