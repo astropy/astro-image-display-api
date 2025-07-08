@@ -135,6 +135,8 @@ class ImageViewerLogic:
             )
         return self._images[image_label].stretch
 
+    get_stretch.__doc__ = ImageViewerInterface.get_stretch.__doc__
+
     def set_stretch(
         self,
         value: BaseStretch,
@@ -153,6 +155,8 @@ class ImageViewerLogic:
             )
         self._images[image_label].stretch = value
 
+    set_stretch.__doc__ = ImageViewerInterface.set_stretch.__doc__
+
     def get_cuts(
         self,
         image_label: str | None = None,
@@ -164,6 +168,8 @@ class ImageViewerLogic:
                 f"Image label '{image_label}' not found. Please load an image first."
             )
         return self._images[image_label].cuts
+
+    get_cuts.__doc__ = ImageViewerInterface.get_cuts.__doc__
 
     def set_cuts(
         self,
@@ -186,6 +192,8 @@ class ImageViewerLogic:
                 f"Image label '{image_label}' not found. Please load an image first."
             )
         self._images[image_label].cuts = self._cuts
+
+    set_cuts.__doc__ = ImageViewerInterface.set_cuts.__doc__
 
     def set_colormap(
         self,
@@ -364,6 +372,8 @@ class ImageViewerLogic:
                 f"Image label '{image_label}' not found. Please load an image first."
             )
         return self._images[image_label].data
+
+    get_image.__doc__ = ImageViewerInterface.get_image.__doc__
 
     @property
     def image_labels(self) -> tuple[str, ...]:
