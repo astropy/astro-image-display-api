@@ -882,8 +882,6 @@ class ImageAPITest:
             else:
                 raise e
 
-        print("\n".join(all_methods))
-
         if not failed_methods:
             # No point in running some of these if setting image or catalog has failed.
             # Run remove_catalog last so that it does not interfere with the
@@ -911,7 +909,7 @@ class ImageAPITest:
 
         else:
             failed_methods.append(
-                "No other methods were tests because the ones above failed."
+                "No other methods were tested because the ones above failed."
             )
 
         assert not failed_methods, (
