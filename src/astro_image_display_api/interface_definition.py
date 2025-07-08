@@ -158,7 +158,7 @@ class ImageViewerInterface(Protocol):
         cuts : `astropy.visualization.BaseInterval`
             The Astropy interval object representing the current cuts.
 
-        **kwargs
+        kwargs :
             Additional keyword arguments that may be used by the viewer.
 
         Raises
