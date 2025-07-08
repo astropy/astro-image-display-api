@@ -25,7 +25,7 @@ class ImageViewerInterface(Protocol):
 
     # Method for loading image data
     @abstractmethod
-    def load_image(self, data: Any, image_label: str | None = None) -> None:
+    def load_image(self, data: Any, image_label: str | None = None, **kwargs) -> None:
         """
         Load data into the viewer. At a minimum, this should allow a FITS file
         to be loaded. Viewers may allow additional data types to be loaded, such as
@@ -40,6 +40,9 @@ class ImageViewerInterface(Protocol):
         image_label : optional
             The label for the image.
 
+        **kwargs
+            Additional keyword arguments that may be used by the viewer.
+
         Notes
         -----
 
@@ -52,6 +55,7 @@ class ImageViewerInterface(Protocol):
     def get_image(
         self,
         image_label: str | None = None,
+        **kwargs,
     ) -> Any:
         """
         Parameters
@@ -59,6 +63,9 @@ class ImageViewerInterface(Protocol):
         image_label : optional
             The label of the image to set the cuts for. If not given and there is
             only one image loaded, that image is returned.
+
+        **kwargs
+            Additional keyword arguments that may be used by the viewer.
 
         Returns
         -------
@@ -81,6 +88,7 @@ class ImageViewerInterface(Protocol):
     @abstractmethod
     def get_image_labels(
         self,
+        **kwargs,
     ) -> tuple[str]:
         """
         Get the labels of the loaded images.
@@ -97,6 +105,7 @@ class ImageViewerInterface(Protocol):
         self,
         cuts: tuple[numbers.Real, numbers.Real] | BaseInterval,
         image_label: str | None = None,
+        **kwargs,
     ) -> None:
         """
         Set the cuts for the image.
@@ -111,6 +120,9 @@ class ImageViewerInterface(Protocol):
         image_label : optional
             The label of the image to set the cuts for. If not given and there is
             only one image loaded, the cuts for that image are set.
+
+        **kwargs
+            Additional keyword arguments that may be used by the viewer.
 
         Raises
         ------
@@ -130,7 +142,7 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def get_cuts(self, image_label: str | None = None) -> BaseInterval:
+    def get_cuts(self, image_label: str | None = None, **kwargs) -> BaseInterval:
         """
         Get the current cuts for the image.
 
@@ -146,6 +158,9 @@ class ImageViewerInterface(Protocol):
         cuts : `astropy.visualization.BaseInterval`
             The Astropy interval object representing the current cuts.
 
+        kwargs :
+            Additional keyword arguments that may be used by the viewer.
+
         Raises
         ------
         ValueError
@@ -159,7 +174,9 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def set_stretch(self, stretch: BaseStretch, image_label: str | None = None) -> None:
+    def set_stretch(
+        self, stretch: BaseStretch, image_label: str | None = None, **kwargs
+    ) -> None:
         """
         Set the stretch for the image.
 
@@ -169,9 +186,12 @@ class ImageViewerInterface(Protocol):
             The stretch to set. This can be any subclass of
             `~astropy.visualization.BaseStretch`.
 
-        image_label : str, optional
+        image_label :
             The label of the image to set the stretch for. If not given and there is
             only one image loaded, the stretch for that image are set.
+
+        **kwargs
+            Additional keyword arguments that may be used by the viewer.
 
         Raises
         ------
@@ -191,7 +211,7 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def get_stretch(self, image_label: str | None = None) -> BaseStretch:
+    def get_stretch(self, image_label: str | None = None, **kwargs) -> BaseStretch:
         """
         Get the current stretch for the image.
 
@@ -201,6 +221,9 @@ class ImageViewerInterface(Protocol):
             The label of the image to get the cuts for. If not given and there is
             only one image loaded, the cuts for that image are returned. If there are
             multiple images and no label is provided, an error is raised.
+
+        **kwargs
+            Additional keyword arguments that may be used by the viewer.
 
         Returns
         -------
@@ -214,7 +237,9 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def set_colormap(self, map_name: str, image_label: str | None = None) -> None:
+    def set_colormap(
+        self, map_name: str, image_label: str | None = None, **kwargs
+    ) -> None:
         """
         Set the colormap for the image specified by image_label.
 
@@ -229,6 +254,9 @@ class ImageViewerInterface(Protocol):
             The label of the image to set the colormap for. If not given and there is
             only one image loaded, the colormap for that image is set. If there are
             multiple images and no label is provided, an error is raised.
+
+        **kwargs
+            Additional keyword arguments that may be used by the viewer.
 
         Raises
         ------
@@ -245,7 +273,7 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def get_colormap(self, image_label: str | None = None) -> str:
+    def get_colormap(self, image_label: str | None = None, **kwargs) -> str:
         """
         Get the current colormap for the image.
 
@@ -255,6 +283,9 @@ class ImageViewerInterface(Protocol):
             The label of the image to get the colormap for. If not given and there is
             only one image loaded, the colormap for that image is returned. If there are
             multiple images and no label is provided, an error is raised.
+
+        **kwargs
+            Additional keyword arguments that may be used by the viewer.
 
         Returns
         -------
@@ -275,7 +306,9 @@ class ImageViewerInterface(Protocol):
 
     # Saving contents of the view and accessing the view
     @abstractmethod
-    def save(self, filename: str | os.PathLike, overwrite: bool = False) -> None:
+    def save(
+        self, filename: str | os.PathLike, overwrite: bool = False, **kwargs
+    ) -> None:
         """
         Save the current view to a file.
 
@@ -288,6 +321,9 @@ class ImageViewerInterface(Protocol):
         overwrite : bool, optional
             If `True`, overwrite the file if it exists. Default is
             `False`.
+
+        **kwargs
+            Additional keyword arguments that may be used by the viewer.
 
         Raises
         ------
@@ -310,6 +346,7 @@ class ImageViewerInterface(Protocol):
         use_skycoord: bool = False,
         catalog_label: str | None = None,
         catalog_style: dict | None = None,
+        **kwargs,
     ) -> None:
         """
         Add catalog entries to the viewer at positions given by the catalog.
@@ -339,6 +376,8 @@ class ImageViewerInterface(Protocol):
             represent the catalog. See
             `~astro_image_display_api.interface_definition.ImageViewerInterface.set_catalog_style`
             for details.
+        **kwargs
+            Additional keyword arguments that may be used by the viewer.
 
         Raises
         ------
@@ -398,7 +437,7 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def get_catalog_style(self, catalog_label: str | None = None) -> dict:
+    def get_catalog_style(self, catalog_label: str | None = None, **kwargs) -> dict:
         """
         Get the style of the catalog markers.
 
@@ -410,6 +449,9 @@ class ImageViewerInterface(Protocol):
             If there are multiple catalogs and no label is provided, an error
             is raised. If the label does not correspond to a loaded
             catalog, an empty dictionary is returned.
+
+        **kwargs
+            Additional keyword arguments that may be used by the viewer.
 
         Returns
         -------
@@ -431,7 +473,7 @@ class ImageViewerInterface(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def remove_catalog(self, catalog_label: str | None = None) -> None:
+    def remove_catalog(self, catalog_label: str | None = None, **kwargs) -> None:
         """
         Remove markers from the image.
 
@@ -441,6 +483,9 @@ class ImageViewerInterface(Protocol):
             The name of the catalog to remove. The value ``'*'`` can be used to
             remove all catalogs. If not given and there is
             only one catalog loaded, that catalog is removed.
+
+        **kwargs
+            Additional keyword arguments that may be used by the viewer.
 
         Raises
         ------
@@ -462,6 +507,7 @@ class ImageViewerInterface(Protocol):
         y_colname: str = "y",
         skycoord_colname: str = "coord",
         catalog_label: str | None = None,
+        **kwargs,
     ) -> Table:
         """
         Get the marker positions.
@@ -479,6 +525,9 @@ class ImageViewerInterface(Protocol):
             is ``'coord'``.
         catalog_label : str, optional
             The name of the catalog set to get.
+
+        **kwargs
+            Additional keyword arguments that may be used by the viewer.
 
         Returns
         -------
@@ -521,6 +570,7 @@ class ImageViewerInterface(Protocol):
         center: SkyCoord | tuple[float, float] | None = None,
         fov: Quantity | float | None = None,
         image_label: str | None = None,
+        **kwargs: Any,
     ) -> None:
         """
         Set the viewport of the image, which defines the center and field of view.
@@ -539,6 +589,9 @@ class ImageViewerInterface(Protocol):
             The label of the image to set the viewport for. If not given and there is
             only one image loaded, the viewport for that image is set. If there are
             multiple images and no label is provided, an error is raised.
+
+        **kwargs
+            Additional keyword arguments that may be used by the viewer.
 
         Raises
         ------
@@ -564,7 +617,10 @@ class ImageViewerInterface(Protocol):
 
     @abstractmethod
     def get_viewport(
-        self, sky_or_pixel: str | None = None, image_label: str | None = None
+        self,
+        sky_or_pixel: str | None = None,
+        image_label: str | None = None,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         """
         Get the current viewport of the image.
@@ -583,6 +639,8 @@ class ImageViewerInterface(Protocol):
             The label of the image to get the viewport for. If not given and there is
             only one image loaded, the viewport for that image is returned. If there
             are multiple images and no label is provided, an error is raised.
+        **kwargs
+            Additional keyword arguments that may be used by the viewer.
 
         Returns
         -------

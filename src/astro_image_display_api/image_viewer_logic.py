@@ -129,7 +129,11 @@ class ImageViewerLogic:
             "size": 5,
         }
 
-    def get_stretch(self, image_label: str | None = None) -> BaseStretch:
+    def get_stretch(
+        self,
+        image_label: str | None = None,
+        **kwargs,  # noqa: ARG002
+    ) -> BaseStretch:
         image_label = self._resolve_image_label(image_label)
         if image_label not in self._images:
             raise ValueError(
@@ -137,7 +141,12 @@ class ImageViewerLogic:
             )
         return self._images[image_label].stretch
 
-    def set_stretch(self, value: BaseStretch, image_label: str | None = None) -> None:
+    def set_stretch(
+        self,
+        value: BaseStretch,
+        image_label: str | None = None,
+        **kwargs,  # noqa: ARG002
+    ) -> None:
         if not isinstance(value, BaseStretch):
             raise TypeError(
                 f"Stretch option {value} is not valid. Must be an "
@@ -150,7 +159,11 @@ class ImageViewerLogic:
             )
         self._images[image_label].stretch = value
 
-    def get_cuts(self, image_label: str | None = None) -> tuple:
+    def get_cuts(
+        self,
+        image_label: str | None = None,
+        **kwargs,  # noqa: ARG002
+    ) -> tuple:
         image_label = self._resolve_image_label(image_label)
         if image_label not in self._images:
             raise ValueError(
@@ -162,6 +175,7 @@ class ImageViewerLogic:
         self,
         value: tuple[numbers.Real, numbers.Real] | BaseInterval,
         image_label: str | None = None,
+        **kwargs,  # noqa: ARG002
     ) -> None:
         if isinstance(value, tuple) and len(value) == 2:
             self._cuts = ManualInterval(value[0], value[1])
@@ -179,7 +193,12 @@ class ImageViewerLogic:
             )
         self._images[image_label].cuts = self._cuts
 
-    def set_colormap(self, map_name: str, image_label: str | None = None) -> None:
+    def set_colormap(
+        self,
+        map_name: str,
+        image_label: str | None = None,
+        **kwargs,  # noqa: ARG002
+    ) -> None:
         image_label = self._resolve_image_label(image_label)
         if image_label not in self._images:
             raise ValueError(
@@ -189,7 +208,11 @@ class ImageViewerLogic:
 
     set_colormap.__doc__ = ImageViewerInterface.set_colormap.__doc__
 
-    def get_colormap(self, image_label: str | None = None) -> str:
+    def get_colormap(
+        self,
+        image_label: str | None = None,
+        **kwargs,  # noqa: ARG002
+    ) -> str:
         image_label = self._resolve_image_label(image_label)
         if image_label not in self._images:
             raise ValueError(
@@ -201,7 +224,11 @@ class ImageViewerLogic:
 
     # The methods, grouped loosely by purpose
 
-    def get_catalog_style(self, catalog_label=None) -> dict[str, Any]:
+    def get_catalog_style(
+        self,
+        catalog_label=None,
+        **kwargs,  # noqa: ARG002
+    ) -> dict[str, Any]:
         """
         Get the style for the catalog.
 
@@ -295,6 +322,7 @@ class ImageViewerLogic:
         self,
         file: str | os.PathLike | ArrayLike | NDData,
         image_label: str | None = None,
+        **kwargs,  # noqa: ARG002
     ) -> None:
         """
         Load a FITS file into the viewer.
@@ -333,7 +361,9 @@ class ImageViewerLogic:
         # working with the new image.
         self._wcs = self._images[image_label].wcs
 
-    def get_image(self, image_label: str | None = None):
+    def get_image(
+        self, image_label: str | None = None, **kwargs  # noqa: ARG002
+    ) -> ArrayLike | NDData | CCDData:
         image_label = self._resolve_image_label(image_label)
         if image_label not in self._images:
             raise ValueError(
@@ -341,7 +371,10 @@ class ImageViewerLogic:
             )
         return self._images[image_label].data
 
-    def get_image_labels(self):
+    def get_image_labels(
+        self,
+        **kwargs,  # noqa: ARG002
+    ) -> tuple[str, ...]:
         return tuple(self._images.keys())
 
     def _determine_largest_dimension(self, shape: tuple[int, int]) -> int:
@@ -458,7 +491,12 @@ class ImageViewerLogic:
         )
 
     # Saving contents of the view and accessing the view
-    def save(self, filename: str | os.PathLike, overwrite: bool = False) -> None:
+    def save(
+        self,
+        filename: str | os.PathLike,
+        overwrite: bool = False,
+        **kwargs,  # noqa: ARG002
+    ) -> None:
         """
         Save the current view to a file.
 
@@ -490,6 +528,7 @@ class ImageViewerLogic:
         use_skycoord: bool = False,
         catalog_label: str | None = None,
         catalog_style: dict | None = None,
+        **kwargs,  # noqa: ARG002
     ) -> None:
         try:
             coords = table[skycoord_colname]
@@ -549,7 +588,11 @@ class ImageViewerLogic:
 
     load_catalog.__doc__ = ImageViewerInterface.load_catalog.__doc__
 
-    def remove_catalog(self, catalog_label: str | None = None) -> None:
+    def remove_catalog(
+        self,
+        catalog_label: str | None = None,
+        **kwargs,  # noqa: ARG002
+    ) -> None:
         """
         Remove markers from the image.
 
@@ -584,6 +627,7 @@ class ImageViewerLogic:
         y_colname: str = "y",
         skycoord_colname: str = "coord",
         catalog_label: str | None = None,
+        **kwargs,  # noqa: ARG002
     ) -> Table:
         # Dostring is copied from the interface definition, so it is not
         # duplicated here.
@@ -603,7 +647,10 @@ class ImageViewerLogic:
 
     get_catalog.__doc__ = ImageViewerInterface.get_catalog.__doc__
 
-    def get_catalog_names(self) -> list[str]:
+    def get_catalog_names(
+        self,
+        **kwargs,  # noqa: ARG002
+    ) -> list[str]:
         return list(self._user_catalog_labels())
 
     get_catalog_names.__doc__ = ImageViewerInterface.get_catalog_names.__doc__
@@ -614,6 +661,7 @@ class ImageViewerLogic:
         center: SkyCoord | tuple[numbers.Real, numbers.Real] | None = None,
         fov: Quantity | numbers.Real | None = None,
         image_label: str | None = None,
+        **kwargs,  # noqa: ARG002
     ) -> None:
         image_label = self._resolve_image_label(image_label)
 
@@ -685,7 +733,10 @@ class ImageViewerLogic:
     set_viewport.__doc__ = ImageViewerInterface.set_viewport.__doc__
 
     def get_viewport(
-        self, sky_or_pixel: str | None = None, image_label: str | None = None
+        self,
+        sky_or_pixel: str | None = None,
+        image_label: str | None = None,
+        **kwargs,  # noqa: ARG002
     ) -> dict[str, Any]:
         if sky_or_pixel not in (None, "sky", "pixel"):
             raise ValueError("sky_or_pixel must be 'sky', 'pixel', or None.")
