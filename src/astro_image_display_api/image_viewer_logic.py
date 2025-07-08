@@ -60,12 +60,6 @@ class ImageViewerLogic:
     state to simulate the behavior of a real viewer.
     """
 
-    # These are attributes, not methods. The type annotations are there
-    # to make sure Protocol knows they are attributes. Python does not
-    # do any checking at all of these types.
-    image_width: int = 0
-    image_height: int = 0
-    zoom_level: float = 1
     _cuts: BaseInterval | tuple[float, float] = AsymmetricPercentileInterval(
         upper_percentile=95
     )

@@ -15,12 +15,6 @@ __all__ = [
 
 @runtime_checkable
 class ImageViewerInterface(Protocol):
-    # These are attributes, not methods. The type annotations are there
-    # to make sure Protocol knows they are attributes. Python does not
-    # do any checking at all of these types.
-    image_width: int
-    image_height: int
-
     # The methods, grouped loosely by purpose
 
     # Method for loading image data
