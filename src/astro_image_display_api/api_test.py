@@ -522,7 +522,7 @@ class ImageAPITest:
         # other one without a label.
         self.image.remove_catalog(catalog_label="test1")
         # Make sure test1 is really gone.
-        assert self.image.catalog_names == ["test2"]
+        assert self.image.catalog_names == ("test2",)
 
         # Get without a catalog
         t2 = self.image.get_catalog()
@@ -800,12 +800,11 @@ class ImageAPITest:
 
     def test_image_labels(self, data):
         # the test viewer begins with a default empty image
-        assert len(self.image.image_labels) == 1
-        assert self.image.image_labels[0] is None
+        assert len(self.image.image_labels) == 0
         assert isinstance(self.image.image_labels, tuple)
 
         self.image.load_image(data, image_label="test")
-        assert len(self.image.image_labels) == 2
+        assert len(self.image.image_labels) == 1
         assert self.image.image_labels[-1] == "test"
 
     def test_get_image(self, data):

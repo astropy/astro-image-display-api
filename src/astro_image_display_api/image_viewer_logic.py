@@ -373,7 +373,7 @@ class ImageViewerLogic:
 
     @property
     def image_labels(self) -> tuple[str, ...]:
-        return tuple(self._images.keys())
+        return tuple(k for k in self._images.keys() if k is not None)
 
     image_labels.__doc__ = ImageViewerInterface.image_labels.__doc__
 
@@ -649,7 +649,7 @@ class ImageViewerLogic:
 
     @property
     def catalog_names(self) -> tuple[str, ...]:
-        return list(self._user_catalog_labels())
+        return tuple(self._user_catalog_labels())
 
     catalog_names.__doc__ = ImageViewerInterface.catalog_names.__doc__
 

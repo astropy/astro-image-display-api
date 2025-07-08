@@ -555,7 +555,7 @@ class ImageViewerInterface(Protocol):
 
         Returns
         -------
-        list of str
+        tuple of str
             The names of the loaded catalogs.
 
         Notes
