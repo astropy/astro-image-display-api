@@ -1,4 +1,5 @@
 import numbers
+import os
 
 import numpy as np
 import pytest
@@ -823,11 +824,13 @@ class ImageAPITest:
         with pytest.raises(ValueError, match="[Ii]mage label.*not found"):
             self.image.get_image(image_label="not a valid label")
 
-    def test_all_methods_accept_additional_kwargs(self, data, catalog):
+    def test_all_methods_accept_additional_kwargs(self, data, catalog, tmp_path):
         """
         Make sure all methods accept additional keyword arguments
         that are not defined in the protocol.
         """
+        # Run in a temperature directory since we are saving an image
+        os.chdir(tmp_path)
         from astro_image_display_api import ImageViewerInterface
 
         all_methods_and_attributes = ImageViewerInterface.__protocol_attrs__
@@ -885,7 +888,9 @@ class ImageAPITest:
         print("\n".join(all_methods))
 
         if not failed_methods:
-            # No point in running some of these if setting image or catalog has failed
+            # No point in running some of these if setting image or catalog has failed.
+            # Run remove_catalog last so that it does not interfere with the
+            # other methods that require an image or catalog to be loaded.
             for method in all_methods + ["remove_catalog"]:
                 # Call each method with the required arguments and additional kwargs
                 # Accumulate the failures and report them at the end
