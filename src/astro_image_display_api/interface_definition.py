@@ -345,6 +345,9 @@ class ImageViewerInterface(Protocol):
         """
         Add catalog entries to the viewer at positions given by the catalog.
 
+        Loading a catalog using a ``catalog_label`` that already exists will
+        overwrite the existing catalog with the new one.
+
         Parameters
         ----------
         table : `astropy.table.Table`

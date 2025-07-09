@@ -9,7 +9,7 @@ from typing import Any
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.nddata import CCDData, NDData
-from astropy.table import Table, vstack
+from astropy.table import Table
 from astropy.units import Quantity
 from astropy.visualization import (
     AsymmetricPercentileInterval,
@@ -509,17 +509,8 @@ class ImageViewerLogic:
 
         catalog_label = self._resolve_catalog_label(catalog_label)
 
-        # Either set new data or append to existing data
-        if (
-            catalog_label in self._catalogs
-            and self._catalogs[catalog_label].data is not None
-        ):
-            # If the catalog already exists, we append to it
-            old_table = self._catalogs[catalog_label].data
-            self._catalogs[catalog_label].data = vstack([old_table, to_add])
-        else:
-            # If the catalog does not exist, we create a new one
-            self._catalogs[catalog_label].data = to_add
+        # Set the new data
+        self._catalogs[catalog_label].data = to_add
 
         # Ensure a catalog always has a style
         if catalog_style is None:

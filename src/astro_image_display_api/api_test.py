@@ -534,7 +534,7 @@ class ImageAPITest:
         self.image.load_catalog(catalog, catalog_label="test1")
 
         retrieved_catalog = self.image.get_catalog(catalog_label="test1")
-        assert len(retrieved_catalog) == 2 * len(catalog)
+        assert len(retrieved_catalog) == len(catalog)
 
     def test_load_catalog_with_skycoord_no_wcs(self, catalog, data):
         # Check that loading a catalog with skycoord but no x/y and
