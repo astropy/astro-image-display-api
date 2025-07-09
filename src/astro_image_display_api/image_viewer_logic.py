@@ -590,7 +590,7 @@ class ImageViewerLogic:
         return result
 
     @property
-    def catalog_names(self) -> tuple[str, ...]:
+    def catalog_labels(self) -> tuple[str, ...]:
         return tuple(self._user_catalog_labels())
 
     # Methods that modify the view

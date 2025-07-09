@@ -79,8 +79,8 @@ class ImageAPITest:
         assert len(table) == 0
         assert sorted(table.colnames) == sorted(["x", "y", "coord"])
 
-    def _get_catalog_names_as_set(self):
-        marks = self.image.catalog_names
+    def _get_catalog_labels_as_set(self):
+        marks = self.image.catalog_labels
         return set(marks)
 
     @pytest.mark.parametrize("load_type", ["fits", "nddata", "array"])
@@ -489,7 +489,7 @@ class ImageAPITest:
             catalog_label="test2",
         )
 
-        assert sorted(self.image.catalog_names) == ["test1", "test2"]
+        assert sorted(self.image.catalog_labels) == ["test1", "test2"]
 
         # No guarantee markers will come back in the same order, so sort them.
         t1 = self.image.get_catalog(catalog_label="test1")
@@ -513,7 +513,7 @@ class ImageAPITest:
         # other one without a label.
         self.image.remove_catalog(catalog_label="test1")
         # Make sure test1 is really gone.
-        assert self.image.catalog_names == ("test2",)
+        assert self.image.catalog_labels == ("test2",)
 
         # Get without a catalog
         t2 = self.image.get_catalog()

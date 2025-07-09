@@ -543,7 +543,7 @@ class ImageViewerInterface(Protocol):
 
     @property
     @abstractmethod
-    def catalog_names(self) -> tuple[str, ...]:
+    def catalog_labels(self) -> tuple[str, ...]:
         """
         Names of the loaded catalogs.
 
