@@ -492,8 +492,15 @@ class ImageViewerLogic:
                 x, y = self._wcs.world_to_pixel(coords)
                 to_add[x_colname] = x
                 to_add[y_colname] = y
+                xy = (x, y)
             else:
                 to_add[x_colname] = to_add[y_colname] = None
+
+        if not use_skycoord and xy is None:
+            raise ValueError(
+                "Cannot use pixel coordinates without pixel columns or both "
+                "coordinates and a WCS."
+            )
 
         if coords is None:
             if use_skycoord and self._wcs is None:
@@ -703,13 +710,15 @@ class ImageViewerLogic:
                         "sky coordinates."
                     )
                 else:
-                    center = viewport.wcs.pixel_to_world(
-                        viewport.center[0], viewport.center[1]
-                    )
-                    pixel_scale = proj_plane_pixel_scales(viewport.wcs)[
-                        viewport.largest_dimension
-                    ]
-                    fov = pixel_scale * viewport.fov * u.degree
+                    if center is None:
+                        center = viewport.wcs.pixel_to_world(
+                            viewport.center[0], viewport.center[1]
+                        )
+                    if fov is None:
+                        pixel_scale = proj_plane_pixel_scales(viewport.wcs)[
+                            viewport.largest_dimension
+                        ]
+                        fov = pixel_scale * viewport.fov * u.degree
         else:
             # Pixel coordinates
             if isinstance(viewport.center, SkyCoord):

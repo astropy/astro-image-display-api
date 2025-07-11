@@ -543,13 +543,10 @@ class ImageAPITest:
 
         # Remove x/y columns from the catalog
         del catalog["x", "y"]
-        self.image.load_catalog(catalog)
-        # Retrieve the catalog and check that the x and y columns are None
-        retrieved_catalog = self.image.get_catalog()
-        assert "x" in retrieved_catalog.colnames
-        assert "y" in retrieved_catalog.colnames
-        assert all(rc is None for rc in retrieved_catalog["x"])
-        assert all(rc is None for rc in retrieved_catalog["y"])
+        with pytest.raises(
+            ValueError, match="Cannot use pixel coordinates without pixel columns"
+        ):
+            self.image.load_catalog(catalog)
 
     def test_load_catalog_with_use_skycoord_no_skycoord_no_wcs(self, catalog, data):
         # Check that loading a catalog with use_skycoord=True but no
