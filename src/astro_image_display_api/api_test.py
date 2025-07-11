@@ -362,7 +362,7 @@ class ImageAPITest:
         with pytest.raises(
             ValueError, match="Must load a catalog before setting a catalog style"
         ):
-            self.image.set_catalog_style(color="red", shape="x", size=10)
+            self.image.set_catalog_style(color="red", shape="circle", size=10)
 
     def test_set_get_catalog_style_no_labels(self, catalog):
         # Check that getting without setting returns a dict that contains
@@ -376,7 +376,7 @@ class ImageAPITest:
         # Add some data before setting a style
         self.image.load_catalog(catalog)
         # Check that setting a marker style works
-        marker_settings = dict(color="red", shape="x", size=10)
+        marker_settings = dict(color="red", shape="crosshair", size=10)
         self.image.set_catalog_style(**marker_settings.copy())
 
         retrieved_style = self.image.get_catalog_style()
@@ -421,7 +421,7 @@ class ImageAPITest:
         # The only required keywords are color, shape, and size.
         # Add some extra keyword to the style.
         style = dict(
-            color="blue", shape="x", size=10, extra_kw="extra_value", alpha=0.5
+            color="blue", shape="circle", size=10, extra_kw="extra_value", alpha=0.5
         )
         self.image.set_catalog_style(**style.copy())
 
@@ -605,7 +605,7 @@ class ImageAPITest:
     def test_load_catalog_with_style_sets_style(self, catalog):
         # Check that loading a catalog with a style sets the style
         # for that catalog.
-        style = dict(color="blue", shape="x", size=10)
+        style = dict(color="blue", shape="square", size=10)
         self.image.load_catalog(
             catalog, catalog_label="test1", catalog_style=style.copy()
         )
