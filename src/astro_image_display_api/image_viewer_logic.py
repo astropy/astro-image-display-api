@@ -9,7 +9,7 @@ from typing import Any
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.nddata import CCDData, NDData
-from astropy.table import Table, vstack
+from astropy.table import Table
 from astropy.units import Quantity
 from astropy.visualization import (
     AsymmetricPercentileInterval,
@@ -492,8 +492,15 @@ class ImageViewerLogic:
                 x, y = self._wcs.world_to_pixel(coords)
                 to_add[x_colname] = x
                 to_add[y_colname] = y
+                xy = (x, y)
             else:
                 to_add[x_colname] = to_add[y_colname] = None
+
+        if not use_skycoord and xy is None:
+            raise ValueError(
+                "Cannot use pixel coordinates without pixel columns or both "
+                "coordinates and a WCS."
+            )
 
         if coords is None:
             if use_skycoord and self._wcs is None:
@@ -509,17 +516,8 @@ class ImageViewerLogic:
 
         catalog_label = self._resolve_catalog_label(catalog_label)
 
-        # Either set new data or append to existing data
-        if (
-            catalog_label in self._catalogs
-            and self._catalogs[catalog_label].data is not None
-        ):
-            # If the catalog already exists, we append to it
-            old_table = self._catalogs[catalog_label].data
-            self._catalogs[catalog_label].data = vstack([old_table, to_add])
-        else:
-            # If the catalog does not exist, we create a new one
-            self._catalogs[catalog_label].data = to_add
+        # Set the new data
+        self._catalogs[catalog_label].data = to_add
 
         # Ensure a catalog always has a style
         if catalog_style is None:
@@ -590,7 +588,7 @@ class ImageViewerLogic:
         return result
 
     @property
-    def catalog_names(self) -> tuple[str, ...]:
+    def catalog_labels(self) -> tuple[str, ...]:
         return tuple(self._user_catalog_labels())
 
     # Methods that modify the view
@@ -712,13 +710,15 @@ class ImageViewerLogic:
                         "sky coordinates."
                     )
                 else:
-                    center = viewport.wcs.pixel_to_world(
-                        viewport.center[0], viewport.center[1]
-                    )
-                    pixel_scale = proj_plane_pixel_scales(viewport.wcs)[
-                        viewport.largest_dimension
-                    ]
-                    fov = pixel_scale * viewport.fov * u.degree
+                    if center is None:
+                        center = viewport.wcs.pixel_to_world(
+                            viewport.center[0], viewport.center[1]
+                        )
+                    if fov is None:
+                        pixel_scale = proj_plane_pixel_scales(viewport.wcs)[
+                            viewport.largest_dimension
+                        ]
+                        fov = pixel_scale * viewport.fov * u.degree
         else:
             # Pixel coordinates
             if isinstance(viewport.center, SkyCoord):

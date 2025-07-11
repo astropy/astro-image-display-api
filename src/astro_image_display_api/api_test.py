@@ -79,8 +79,8 @@ class ImageAPITest:
         assert len(table) == 0
         assert sorted(table.colnames) == sorted(["x", "y", "coord"])
 
-    def _get_catalog_names_as_set(self):
-        marks = self.image.catalog_names
+    def _get_catalog_labels_as_set(self):
+        marks = self.image.catalog_labels
         return set(marks)
 
     @pytest.mark.parametrize("load_type", ["fits", "nddata", "array"])
@@ -362,7 +362,7 @@ class ImageAPITest:
         with pytest.raises(
             ValueError, match="Must load a catalog before setting a catalog style"
         ):
-            self.image.set_catalog_style(color="red", shape="x", size=10)
+            self.image.set_catalog_style(color="red", shape="circle", size=10)
 
     def test_set_get_catalog_style_no_labels(self, catalog):
         # Check that getting without setting returns a dict that contains
@@ -376,7 +376,7 @@ class ImageAPITest:
         # Add some data before setting a style
         self.image.load_catalog(catalog)
         # Check that setting a marker style works
-        marker_settings = dict(color="red", shape="x", size=10)
+        marker_settings = dict(color="red", shape="crosshair", size=10)
         self.image.set_catalog_style(**marker_settings.copy())
 
         retrieved_style = self.image.get_catalog_style()
@@ -421,7 +421,7 @@ class ImageAPITest:
         # The only required keywords are color, shape, and size.
         # Add some extra keyword to the style.
         style = dict(
-            color="blue", shape="x", size=10, extra_kw="extra_value", alpha=0.5
+            color="blue", shape="circle", size=10, extra_kw="extra_value", alpha=0.5
         )
         self.image.set_catalog_style(**style.copy())
 
@@ -489,7 +489,7 @@ class ImageAPITest:
             catalog_label="test2",
         )
 
-        assert sorted(self.image.catalog_names) == ["test1", "test2"]
+        assert sorted(self.image.catalog_labels) == ["test1", "test2"]
 
         # No guarantee markers will come back in the same order, so sort them.
         t1 = self.image.get_catalog(catalog_label="test1")
@@ -513,7 +513,7 @@ class ImageAPITest:
         # other one without a label.
         self.image.remove_catalog(catalog_label="test1")
         # Make sure test1 is really gone.
-        assert self.image.catalog_names == ("test2",)
+        assert self.image.catalog_labels == ("test2",)
 
         # Get without a catalog
         t2 = self.image.get_catalog()
@@ -534,7 +534,7 @@ class ImageAPITest:
         self.image.load_catalog(catalog, catalog_label="test1")
 
         retrieved_catalog = self.image.get_catalog(catalog_label="test1")
-        assert len(retrieved_catalog) == 2 * len(catalog)
+        assert len(retrieved_catalog) == len(catalog)
 
     def test_load_catalog_with_skycoord_no_wcs(self, catalog, data):
         # Check that loading a catalog with skycoord but no x/y and
@@ -543,13 +543,10 @@ class ImageAPITest:
 
         # Remove x/y columns from the catalog
         del catalog["x", "y"]
-        self.image.load_catalog(catalog)
-        # Retrieve the catalog and check that the x and y columns are None
-        retrieved_catalog = self.image.get_catalog()
-        assert "x" in retrieved_catalog.colnames
-        assert "y" in retrieved_catalog.colnames
-        assert all(rc is None for rc in retrieved_catalog["x"])
-        assert all(rc is None for rc in retrieved_catalog["y"])
+        with pytest.raises(
+            ValueError, match="Cannot use pixel coordinates without pixel columns"
+        ):
+            self.image.load_catalog(catalog)
 
     def test_load_catalog_with_use_skycoord_no_skycoord_no_wcs(self, catalog, data):
         # Check that loading a catalog with use_skycoord=True but no
@@ -605,7 +602,7 @@ class ImageAPITest:
     def test_load_catalog_with_style_sets_style(self, catalog):
         # Check that loading a catalog with a style sets the style
         # for that catalog.
-        style = dict(color="blue", shape="x", size=10)
+        style = dict(color="blue", shape="square", size=10)
         self.image.load_catalog(
             catalog, catalog_label="test1", catalog_style=style.copy()
         )
