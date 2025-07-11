@@ -74,16 +74,14 @@ class ImageViewerLogic:
     state to simulate the behavior of a real viewer.
     """
 
-    _cuts: BaseInterval | tuple[float, float] = AsymmetricPercentileInterval(
-        upper_percentile=95
-    )
-    _stretch: BaseStretch = LinearStretch
-
     # some internal variable for keeping track of viewer state
     _wcs: WCS | None = None
     _center: tuple[numbers.Real, numbers.Real] = (0.0, 0.0)
 
     def __post_init__(self):
+        self._set_up_catalog_image_dicts()
+
+    def _set_up_catalog_image_dicts(self):
         # This is a dictionary of marker sets. The keys are the names of the
         # marker sets, and the values are the tables containing the markers.
         self._catalogs = defaultdict(CatalogInfo)
@@ -186,9 +184,9 @@ class ImageViewerLogic:
         **kwargs,  # noqa: ARG002
     ) -> None:
         if isinstance(value, tuple) and len(value) == 2:
-            self._cuts = ManualInterval(value[0], value[1])
+            cuts = ManualInterval(value[0], value[1])
         elif isinstance(value, BaseInterval):
-            self._cuts = value
+            cuts = value
         else:
             raise TypeError(
                 "Cuts must be an Astropy.visualization Interval object or a tuple "
@@ -199,7 +197,7 @@ class ImageViewerLogic:
             raise ValueError(
                 f"Image label '{image_label}' not found. Please load an image first."
             )
-        self._images[image_label].cuts = self._cuts
+        self._images[image_label].cuts = cuts
 
     def set_colormap(
         self,
