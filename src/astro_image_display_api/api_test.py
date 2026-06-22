@@ -117,6 +117,27 @@ class ImageAPITest:
         assert vport["center"].ra.deg == pytest.approx(wcs.wcs.crval[0])
         assert vport["center"].dec.deg == pytest.approx(wcs.wcs.crval[1])
 
+    @pytest.mark.parametrize("world", [True, False])
+    def test_fov_initialization_from_image(self, data, wcs, world):
+        # Check that the FOV is initialized to a reasonable value when an image
+        # is loaded.
+        self.image.load_image(
+            NDData(
+                data=data,
+                wcs=wcs if world else None,
+            ),
+            image_label="test"
+        )
+        vport = self.image.get_viewport(image_label="test")
+        if world:
+            assert isinstance(vport["fov"], u.Quantity)
+            assert vport["fov"].unit.physical_type == "angle"
+            pixel_scale = np.mean(np.abs(wcs.wcs.cdelt))
+            assert vport["fov"].value == pytest.approx(max(data.shape) * pixel_scale)
+        else:
+            assert isinstance(vport["fov"], numbers.Real)
+            assert vport["fov"] == pytest.approx(max(data.shape))
+
     def test_set_get_fov_pixel(self, data):
         # Set data first, since that is needed to determine zoom level
         self.image.load_image(data, image_label="test")

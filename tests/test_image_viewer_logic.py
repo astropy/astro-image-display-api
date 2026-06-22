@@ -1,6 +1,7 @@
 # All implementations of the ImageViewerInterface will need to import
 # these to carry out the tests.
-from astro_image_display_api import ImageViewerInterface, ImageAPITest  # noqa: I001
+from astro_image_display_api import ImageViewerInterface  # noqa: I001
+from astro_image_display_api.api_test import ImageAPITest
 
 # This import should be replaced with an import of your specific
 # implementation of the ImageViewerInterface. If you keep the
