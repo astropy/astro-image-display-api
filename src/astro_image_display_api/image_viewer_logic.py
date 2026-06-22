@@ -391,7 +391,7 @@ class ImageViewerLogic:
             fov = (
                 fov
                 * u.degree
-                / proj_plane_pixel_scales(wcs)[
+                * proj_plane_pixel_scales(wcs)[
                     self._images[image_label].largest_dimension
                 ]
             )
