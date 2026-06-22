@@ -31,6 +31,7 @@ docs = [
     "sphinx-astropy[confv2]",
     "sphinx-design",
     "graphviz",
+    "pytest",
 ]
 test = [
     "black",

@@ -184,7 +184,11 @@ man_pages = [("index", project.lower(), project + " Documentation", [author], 1)
 # -- Turn on nitpicky mode for sphinx (to warn about references not found) ----
 #
 nitpicky = True
-nitpick_ignore = []
+nitpick_ignore = [
+    # numpy.typing.ArrayLike resolves to a private path that numpy's
+    # intersphinx inventory does not expose, so it can never be cross-referenced.
+    ("py:class", "numpy._typing._array_like.ArrayLike"),
+]
 #
 # Some warnings are impossible to suppress, and you can list specific references
 # that should be ignored in a nitpick-exceptions file which should be inside
