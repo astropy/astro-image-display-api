@@ -683,12 +683,15 @@ class ImageViewerLogic:
 
         viewport = self._images[image_label]
 
-        # Figure out what to return if the user did not specify sky_or_pixel
+        # Figure out what to return if the user did not specify sky_or_pixel.
+        # The interface definition for get_viewport says that if the image has a WCS,
+        # then the return should be in world coordinates, otherwise it should be in pixel
+        # coordinates.
         if sky_or_pixel is None:
-            if isinstance(viewport.center, SkyCoord):
+            if self._wcs is not None:
                 # Somebody set this to sky coordinates, so return sky coordinates
                 sky_or_pixel = "sky"
-            elif isinstance(viewport.center, tuple):
+            else:
                 # Somebody set this to pixel coordinates, so return pixel coordinates
                 sky_or_pixel = "pixel"
 

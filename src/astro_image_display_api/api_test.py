@@ -314,7 +314,7 @@ class ImageAPITest:
 
         # Get the viewport in world coordinates
         vport_world = self.image.get_viewport(image_label="test", sky_or_pixel="sky")
-        assert vport_world["center"] == input_center
+        assert vport_world["center"].separation(input_center) < 1e-5 * u.arcsec
         assert vport_world["fov"] == input_fov
 
     @pytest.mark.parametrize("sky_or_pixel", ["sky", "pixel"])
@@ -365,17 +365,56 @@ class ImageAPITest:
         assert vport_world["center"] == wcs.pixel_to_world(*input_center_pixel)
         assert isinstance(vport_world["fov"], u.Quantity)
 
+    def test_get_viewport_with_wcs_set_return_world(self, data, wcs):
+        # Check that the viewport is retrieved with world coordinates
+        # if sky_or_pixel is None (the default) and a WCS is present.
+
+        # Load the data with a WCS
+        self.image.load_image(NDData(data=data, wcs=wcs), image_label="test")
+
+        # Set the viewport in world coordinates
+        input_center = SkyCoord(*wcs.wcs.crval, unit="deg")
+        input_fov = 2 * u.degree
+        self.image.set_viewport(center=input_center, fov=input_fov, image_label="test")
+        # Get the viewport without specifying sky_or_pixel
+        vport = self.image.get_viewport(image_label="test")
+        assert isinstance(vport["center"], SkyCoord)
+        assert vport["center"].separation(input_center) < 1e-5 * u.arcsec
+        assert vport["fov"] == input_fov
+
+        # Get the viewport in pixels so that we can set_viewport using it later.
+        vport_pixel = self.image.get_viewport(image_label="test", sky_or_pixel="pixel")
+
+        # Set the viewport in pixel coordiinates to the same size/center
+        # as the world coordinates.
+        self.image.set_viewport(
+            **vport_pixel
+        )
+        # Get the viewport without specifying sky_or_pixel
+        vport = self.image.get_viewport(image_label="test")
+        assert isinstance(vport["center"], SkyCoord)
+        assert vport["center"].separation(input_center) < 1e-5 * u.arcsec
+        assert vport["fov"] == input_fov
+
     def test_viewport_round_trips(self, data, wcs):
         # Check that the viewport retrieved with get can be used to set
         # the viewport again, and that the values are the same.
         self.image.load_image(NDData(data=data, wcs=wcs), image_label="test")
+
         self.image.set_viewport(center=(10, 10), fov=100, image_label="test")
+
         vport = self.image.get_viewport(image_label="test")
+        assert isinstance(vport["center"], SkyCoord)
+
         # Set the viewport again using the values from the get_viewport
         self.image.set_viewport(**vport)
         # Get the viewport again and check that the values are the same
         vport2 = self.image.get_viewport(image_label="test")
-        assert vport2 == vport
+        # Check the values of each item in the viewport dict, allowing
+        # for small numerical differences in the center and fov.
+        assert vport2["center"].separation(vport["center"]) < 1e-5 * u.arcsec
+        assert vport2["fov"].value == pytest.approx(vport["fov"].value)
+        assert vport2["image_label"] == vport["image_label"]
 
     def test_set_catalog_style_before_catalog_data_raises_error(self):
         # Make sure that adding a catalog style before adding any catalog
