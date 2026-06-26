@@ -796,6 +796,22 @@ class ImageAPITest:
         with pytest.raises(ValueError, match="[Ii]mage label.*not found"):
             self.image.set_cuts((10, 100), image_label="not a valid label")
 
+    @pytest.mark.parametrize(
+        "set_method, value",
+        [("set_cuts", (10, 100)), ("set_stretch", LogStretch())],
+    )
+    def test_set_cuts_stretch_preserves_viewport(self, data, set_method, value):
+        # Changing the color mapping (cuts or stretch) must never change the
+        # viewport (center/fov/rotation).
+        self.image.load_image(data, image_label="test")
+        self.image.set_viewport(center=(30, 40), fov=20, image_label="test")
+        before = self.image.get_viewport(image_label="test", sky_or_pixel="pixel")
+
+        getattr(self.image, set_method)(value, image_label="test")
+
+        after = self.image.get_viewport(image_label="test", sky_or_pixel="pixel")
+        assert after == before
+
     def test_set_get_colormap(self, data):
         # Check setting and getting with a single image label.
         self.image.load_image(data, image_label="test")
