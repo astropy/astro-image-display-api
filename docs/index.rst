@@ -32,9 +32,15 @@ How to implement this API in your package
    starting point for your own package. This reference implementation does not
    do any image display itself, but provides a set of methods that you can
    override to implement your own image display logic on top of the management
-   of image and catalog labels. You are **not** required to use this reference
-   implementation; it is just a convenience you can use to get started if you
-   want to.
+   of image and catalog labels. The :ref:`reference_implementation` page walks
+   through that override pattern -- which private rendering hooks to
+   override, which public methods to leave alone, and the order in which the
+   hooks are called while an image is loading -- along with two common
+   gotchas (constructing a dataclass subclass correctly, and giving overridden
+   public methods their own docstrings), and ends
+   with a small, tested worked example you can use as a template. You are
+   **not** required to use this reference implementation; it is just a
+   convenience you can use to get started if you want to.
 
 .. toctree::
   :maxdepth: 1
