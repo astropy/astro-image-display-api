@@ -51,17 +51,22 @@ class RecordingViewer(ImageViewerLogic):
     def _batch_update(self):
         """Record the start and end of a batch of display updates."""
         # A real backend would hold off on redrawing until the block ends.
+        # The ``finally`` matters: load_image re-raises loader errors from
+        # inside the batch, and the batch must still be closed.
         self._record("batch_enter")
-        yield
-        self._record("batch_exit")
+        try:
+            yield
+        finally:
+            self._record("batch_exit")
 
     # ------------------------------------------------------------------
     # Image hooks
     # ------------------------------------------------------------------
     def _render_image(self, image_label: str) -> None:
         """Record that the image ``image_label`` is now displayed."""
-        # A real backend would hand self.get_image(image_label) to its
-        # plotting library here.
+        # A real backend would hand the pixel values to its plotting library
+        # here. get_image() may return an NDData/CCDData rather than an
+        # array, so use np.asarray(getattr(image, "data", image)).
         self._record("render_image", image_label=image_label)
 
     def _apply_cuts(self, image_label: str) -> None:

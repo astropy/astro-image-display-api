@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from astro_image_display_api import ImageViewerInterface
 from astro_image_display_api.api_test import ImageAPITest
@@ -33,6 +34,15 @@ def test_load_image_hook_sequence():
     ]
     labels = {d["image_label"] for op, d in viewer.display_calls if "image_label" in d}
     assert labels == {"a"}
+
+
+def test_batch_closes_when_load_fails():
+    # A failed load must still close the batch, or a real backend would be
+    # left with redraws suppressed.
+    viewer = RecordingViewer()
+    with pytest.raises(NotImplementedError):
+        viewer.load_image("nope.asdf")
+    assert _operations(viewer) == ["batch_enter", "batch_exit"]
 
 
 def test_apply_hooks_only_for_displayed_image():

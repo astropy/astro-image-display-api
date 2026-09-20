@@ -34,7 +34,9 @@ What ``ImageViewerLogic`` does -- and does not do
 - Resolve labels for you when a method is called without one, including
   raising an error when the label is ambiguous.
 - Set sensible default cuts (``AsymmetricPercentileInterval(1, 95)``) and
-  stretch (``LinearStretch``) whenever an image is loaded.
+  stretch (``LinearStretch``) when an image is loaded under a new label.
+  Reloading under an existing label keeps that label's cuts, stretch, and
+  colormap; see `What happens during load_image`_.
 - Load FITS files, 2D arrays, and ``astropy.nddata.NDData`` objects.
 
 It does **not**:
@@ -93,13 +95,27 @@ accepted:
   ``remove_catalog``), an explicit label must already correspond to loaded
   data, or a ``ValueError`` is raised.
 - If no label is given to one of those other methods and nothing is loaded,
-  a ``ValueError`` ("No image/catalog is loaded...") is raised.
+  a ``ValueError`` ("No image/catalog is loaded...") is raised, with the
+  catalog exceptions listed below.
 - If no label is given to one of those other methods and exactly one label
   is loaded -- whether it is the shared default label or one the caller
   chose -- that label is used.
 - If no label is given to one of those other methods and more than one
   label exists, a ``ValueError`` is raised asking the caller to
   disambiguate.
+
+Four catalog calls step outside these rules, and ``ImageAPITest``
+exercises each of them:
+
+- ``get_catalog()`` with no label on a viewer with no catalogs returns an
+  empty table with the requested column names instead of raising.
+- ``get_catalog_style()`` with no label on a viewer with no catalogs
+  returns the default style, with ``catalog_label`` set to ``None``.
+- ``set_catalog_style`` on a viewer with no catalogs raises
+  ``ValueError("Must load a catalog before setting a catalog style.")``
+  before any label is resolved, whether or not a label was given.
+- ``remove_catalog("*")`` removes every catalog. ``"*"`` is handled before
+  label resolution and is never treated as a label.
 
 Treat ``_images`` and ``_catalogs`` as private. Read state back through the
 public getters (``get_viewport``, ``get_cuts``, ``get_stretch``,
@@ -143,8 +159,12 @@ batching.
      - ``load_image``, once, after the new image's data, WCS, viewport,
        cuts, stretch, and colormap have all been stored and
        ``image_label`` has become the displayed image.
-     - Hand the array from ``get_image(image_label=...)`` to the plotting
-       library, replacing whatever image was shown before.
+     - Get the image with ``get_image(image_label=...)`` and hand its pixel
+       values to the plotting library, replacing whatever image was shown
+       before. ``get_image`` returns what was loaded, so it may be a plain
+       array or an ``NDData``/``CCDData``. With ``image`` as that return
+       value, ``np.asarray(getattr(image, "data", image))`` yields an array
+       in every case.
    * - ``_apply_cuts(image_label)``
      - ``set_cuts``, and ``load_image`` (once, after ``_render_image``).
        Only when ``image_label`` is the displayed image.
@@ -179,12 +199,15 @@ batching.
        ``_batch_update`` block, so the hook never sees ``"*"``.
      - Remove the markers drawn for that catalog.
    * - ``_batch_update()``
-     - ``load_image`` wraps its whole body in it, and
+     - ``load_image`` wraps its state changes and hook calls in it, and
        ``remove_catalog("*")`` wraps its loop over the catalogs in it. The
        base implementation returns ``contextlib.nullcontext()``.
      - Return a context manager that suppresses intermediate redraws until
        the block exits, for backends where each hook call would otherwise
-       trigger a repaint or a round trip to a front end.
+       trigger a repaint or a round trip to a front end. The context
+       manager must be exception-safe: ``load_image`` re-raises loader
+       errors from inside the block, so release whatever you acquired in a
+       ``finally`` clause.
 
 The gating of the ``_apply_*`` hooks is worth spelling out. ``ImageViewerLogic``
 keeps track of which image is displayed (today, at most one: the most
@@ -199,7 +222,7 @@ Because the hooks are only ever called with the state already stored, the
 override does not need to call ``super()``, and it does not need a
 docstring: the hooks are private, and the docstring check in
 ``ImageAPITest`` (see `Docstrings on overridden methods`_) covers only the
-public methods and properties of your class.
+public methods of your class.
 
 The worked example below overrides every hook. Its ``_apply_cuts`` is
 typical:
@@ -260,44 +283,54 @@ What happens during ``load_image``
 ------------------------------------
 
 Calling ``load_image(data, image_label=...)`` does the following, in order.
-All of it happens inside a single ``_batch_update`` block.
+The image label is resolved first; every state change and hook call after
+that happens inside a single ``_batch_update`` block.
 
 #. The image label is resolved (a load accepts a brand-new label, or falls
    back to the shared default label described in `The state model`_
-   above).
-#. The viewer is temporarily marked as displaying nothing, and any existing
-   entry for the label is set aside and replaced with a fresh, empty one.
+   above). This happens before the batch opens, as does noting the label's
+   existing entry, if any, and which image is currently displayed, so that
+   both can be put back if the load fails.
+#. The ``_batch_update`` block opens. The viewer is temporarily marked as
+   displaying nothing, and the entry for the label is replaced with a
+   fresh, empty one.
 #. A format-specific loader (for FITS, arrays, or ``NDData``) stores the
    new data and WCS, then establishes the default viewport (centered, whole
    image visible), cuts (``AsymmetricPercentileInterval(1, 95)``), and
    stretch (``LinearStretch``) for the new image. Because nothing is marked
    as displayed at this point, none of the ``_apply_*`` hooks fire during
    this step.
+#. If the loader raised an exception, the label's previous entry (or its
+   absence, if the label was new) and the previous displayed-image tracking
+   are put back before the exception propagates. The viewer keeps showing
+   whatever it showed before the failed load, the ``_apply_*`` hooks keep
+   firing for that image, and no hook is called for the failed load. Only
+   the loader in the previous step is covered by this rollback; the
+   exception then leaves the ``_batch_update`` block, which is why that
+   context manager has to release what it acquired in a ``finally`` clause.
 #. If the label already existed before this load, its previous cuts,
-   stretch, and colormap are restored now, overriding the defaults just
-   established. Reloading data under an existing label keeps that label's
-   display settings; only its data, WCS, and viewport come from the new
-   image. A label that did not exist before keeps the defaults.
-#. If loading raised an exception at any point above, the label's previous
-   entry (or its absence, if the label was new) and the previous
-   displayed-image tracking are put back before the exception propagates.
-   The viewer keeps showing whatever it showed before the failed load, the
-   ``_apply_*`` hooks keep firing for that image, and no hook is called for
-   the failed load.
+   stretch, and colormap are restored now, replacing the default cuts and
+   stretch the loader just established. Reloading data under an existing
+   label keeps that label's display settings; only its data, WCS, and
+   viewport come from the new image. A label that did not exist before keeps
+   the defaults.
 #. The label is marked as the (only) displayed image, and the hooks are
    called once each, with the resolved label, in this order:
    ``_render_image``, ``_apply_cuts``, ``_apply_stretch``,
    ``_apply_colormap``, ``_apply_viewport``.
 #. The ``_batch_update`` block exits.
 
-So, from a backend's point of view, a load is simply: the batch opens, the
-five image hooks fire once each with complete state, the batch closes.
-There is nothing to guard against, and nothing the backend has to do in
-``load_image`` itself. The worked example's log after loading one image
-under the label ``"a"`` reads, in order, ``batch_enter``, ``render_image``,
-``apply_cuts``, ``apply_stretch``, ``apply_colormap``, ``apply_viewport``,
-``batch_exit``, each with ``image_label="a"``; the test in
-`Wiring up the tests`_ pins that sequence down.
+So, from a backend's point of view, a successful load is simply: the batch
+opens, the five image hooks fire once each with complete state, the batch
+closes. A failed load opens the batch and leaves it by way of the raised
+exception, without calling any image hook. Apart from closing the batch on
+that path, there is nothing to guard against, and nothing the backend has to
+do in ``load_image`` itself. The worked example's log after loading one
+image under the label ``"a"`` reads, in order, ``batch_enter``,
+``render_image``, ``apply_cuts``, ``apply_stretch``, ``apply_colormap``,
+``apply_viewport``, ``batch_exit``, with every hook entry carrying
+``image_label="a"``; the tests in `Wiring up the tests`_ pin that sequence
+down, and check that a failed load still ends with ``batch_exit``.
 
 The one thing to keep in mind is which state each hook can rely on.
 ``_render_image`` runs first, so a backend that creates a plot artist or
@@ -348,7 +381,11 @@ That decorator only rewrites the docstrings of names that are already
 present in ``ImageViewerLogic.__dict__`` at class-definition time -- it does
 not run again for subclasses. If you override a method and do not give it
 its own docstring, the override ends up with no docstring at all, which
-makes ``test_every_method_attribute_has_docstring`` fail.
+makes ``test_every_method_attribute_has_docstring`` fail. The test looks
+attributes up on an *instance*, so it cannot see the docstring of an
+overridden property such as ``image_labels``; an undocumented property
+override passes silently. Give it a docstring anyway, or use the decorator
+below, which does handle properties.
 
 Three ways to fix this:
 
@@ -374,14 +411,14 @@ so it is the one method every backend overrides directly, and, unlike other
 public-method overrides, it should generally **not** call
 ``super().save(...)``. The base implementation just writes a placeholder
 text file -- it has nothing useful for a real viewer to reuse. Instead, your
-override should do the whole job itself: render the current view to ``filename`` (with the output format
-determined by the file's suffix), and raise ``FileExistsError`` unless
-``overwrite=True`` is given.
+override should do the whole job itself: render the current view to
+``filename`` (with the output format determined by the file's suffix), and
+raise ``FileExistsError`` unless ``overwrite=True`` is given.
 
-The test suite only checks that a file appears after
-:py:meth:`~astro_image_display_api.image_viewer_logic.ImageViewerLogic.save`
-is called, and that the overwrite behavior above holds; it does not inspect
-the file's contents or format.
+The test suite loads an image, calls
+:py:meth:`~astro_image_display_api.image_viewer_logic.ImageViewerLogic.save`,
+and checks only that a file appears and that the overwrite behavior above
+holds; it does not inspect the file's contents or format.
 
 .. literalinclude:: ../tests/example_viewer.py
   :language: python
@@ -412,13 +449,19 @@ need to match the same patterns.
    * - ``(?i)catalog label.*not found``
      - ``ValueError``
      - A ``catalog_label`` is given that does not correspond to a loaded
-       catalog (``get_catalog``, ``get_catalog_style``,
-       ``set_catalog_style``, ``remove_catalog``).
+       catalog (``get_catalog``, ``get_catalog_style``, and, when at least
+       one catalog is loaded, ``set_catalog_style``).
+   * - the missing label itself
+     - ``ValueError``
+     - ``remove_catalog`` is given a ``catalog_label`` that is not loaded.
+       The suite only requires the message to contain the label; the base
+       class uses the same "not found" message as the row above.
    * - ``[Nn]o image``
      - ``ValueError``
-     - No image is loaded at all, so no ``image_label`` -- given or not --
-       could possibly resolve (any accessor, or ``set_viewport``,
-       ``set_cuts``, ``set_stretch``, ``set_colormap``).
+     - No image is loaded and no ``image_label`` is given (any image
+       accessor, or ``set_viewport``, ``set_cuts``, ``set_stretch``,
+       ``set_colormap``). With an explicit label the "not found" message
+       above is raised instead, even on an empty viewer.
    * - ``[Nn]o catalog``
      - ``ValueError``
      - ``remove_catalog`` is called with no ``catalog_label`` and no
@@ -515,11 +558,13 @@ testing any other implementation of
 see :ref:`testing_AIDA_implementation` for the general pattern of
 subclassing :py:class:`~astro_image_display_api.api_test.ImageAPITest` and
 setting ``image_widget_class``. Below is that pattern applied to the worked
-example above, plus two extra tests: one pins down the hook order described
-in `What happens during load_image`_, and one checks that the ``_apply_*``
-hooks fire only for the displayed image. The full set of hook behavior tests
-lives in ``tests/test_image_viewer_logic_implementation.py`` in the source
-tree.
+example above, plus three extra tests: one pins down the hook order
+described in `What happens during load_image`_, one checks that a failed
+load still leaves the ``_batch_update`` block (``batch_enter`` followed by
+``batch_exit``, with no hook in between), and one checks that the
+``_apply_*`` hooks fire only for the displayed image. The full set of hook
+behavior tests lives in ``tests/test_image_viewer_logic_implementation.py``
+in the source tree.
 
 .. literalinclude:: ../tests/test_example_viewer.py
   :language: python
