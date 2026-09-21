@@ -73,12 +73,26 @@ in earlier versions, that default label is **not** hidden from the public
 and
 :py:attr:`~astro_image_display_api.image_viewer_logic.ImageViewerLogic.catalog_labels`
 properties -- once something has been loaded without a label, it shows up in
-those tuples just like any other label. If you need to refer to it
-explicitly (most callers do not; omitting ``image_label``/``catalog_label``
-already resolves to it when nothing else is ambiguous), find it by set
-difference against the labels you *did* choose yourself, e.g.
-``(set(viewer.image_labels) - {"a", "b"}).pop()``, rather than depending on
-the exact sentinel value, which is a private implementation detail.
+those tuples just like any other label.
+
+Most callers never need to name that label: omitting
+``image_label``/``catalog_label`` already resolves to it whenever nothing
+else is ambiguous. If you do need to name it, import the constant rather
+than writing its value out::
+
+    from astro_image_display_api.image_viewer_logic import DEFAULT_LABEL
+
+    if DEFAULT_LABEL in viewer.image_labels:
+        ...
+
+``DEFAULT_LABEL`` is a module-level name, but it is deliberately absent from
+that module's ``__all__``: the *value* of the sentinel is an implementation
+detail and may change, so do not compare against the string itself.
+Recovering the label by set difference against the labels you chose
+yourself -- ``(set(viewer.image_labels) - {"a", "b"}).pop()`` -- is tempting
+but fragile: it raises ``KeyError`` when nothing has been loaded without a
+label, and it silently returns one of your own labels if you leave one out
+of the set.
 
 Label resolution -- implemented by the private ``_resolve_label`` helper
 (via ``_resolve_image_label``/``_resolve_catalog_label``) -- follows the
@@ -144,6 +158,20 @@ time a hook runs, the label is a real, resolved label (never ``None`` and
 never ``"*"``), the state for that label is complete, and any error that
 was going to be raised has already been raised.
 
+``_remove_catalog_marks`` is the one exception to "the state for that label
+is complete", and it is worth spelling out because it is easy to get wrong.
+``remove_catalog`` deletes the catalog from ``_catalogs`` *before* calling
+the hook (and ``remove_catalog("*")`` empties the dictionary before its
+loop), so by the time the hook runs the label no longer resolves: calling
+``get_catalog(catalog_label=...)`` or
+``get_catalog_style(catalog_label=...)`` from inside
+``_remove_catalog_marks`` raises ``ValueError: Catalog label '...' not
+found. Please load a catalog first.`` A backend must therefore keep its own
+mapping from catalog label to whatever marker objects it created in
+``_draw_catalog``, and use that mapping to undraw them here. The label
+itself is still valid to use as a dictionary key; it is only the *stored
+catalog state* that is already gone.
+
 There are eight hooks. The five ``_apply_*``/``_render_image`` hooks deal
 with images, two deal with catalogs, and one is a context manager for
 batching.
@@ -191,7 +219,9 @@ batching.
        ``get_catalog(catalog_label=...)`` using the shape, color, and size
        from ``get_catalog_style(catalog_label=...)``. The catalog's pixel
        and sky columns have already been filled in from the WCS where
-       possible.
+       possible. ``get_catalog`` returns a fresh copy of the stored table
+       every time it is called, so call it once per hook invocation and
+       reuse the result rather than calling it per column or per row.
    * - ``_remove_catalog_marks(catalog_label)``
      - ``remove_catalog``, after the catalog has been removed from the
        stored state. ``remove_catalog("*")`` is expanded by the base
@@ -415,10 +445,25 @@ override should do the whole job itself: render the current view to
 ``filename`` (with the output format determined by the file's suffix), and
 raise ``FileExistsError`` unless ``overwrite=True`` is given.
 
-The test suite loads an image, calls
+That last part is the trap in this section: because there is no hook, the
+existence check and the ``FileExistsError`` message are *not* inherited the
+way every other error message on this page is. An override that forgets it
+will pass ``test_save``, fail ``test_save_overwrite``, and silently clobber
+existing files in a user's hands. Copy the guard from the worked example
+below, or call ``super().save(...)`` for its side effect of raising before
+doing your own rendering. (Giving ``save`` a ``_save_view`` hook, so that
+the base class keeps owning the check, would fit the rest of this page
+better; that is a change to ``ImageViewerLogic`` itself rather than to this
+guide.)
+
+``ImageAPITest`` loads an image before calling
 :py:meth:`~astro_image_display_api.image_viewer_logic.ImageViewerLogic.save`,
-and checks only that a file appears and that the overwrite behavior above
-holds; it does not inspect the file's contents or format.
+and then checks only that a file appears and that the overwrite behavior
+above holds; it does not inspect the file's contents or format. Saving a
+view that has no image in it is not part of the tested contract, so a
+backend whose ``save`` needs a canvas that only exists once something has
+been drawn is free to raise there -- but the compliance suite will not
+notice if it does, so document whatever your backend does in that case.
 
 .. literalinclude:: ../tests/example_viewer.py
   :language: python

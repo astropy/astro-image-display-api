@@ -345,6 +345,12 @@ class ImageViewerInterface(Protocol):
         Notes
         -----
         This has no effect on the displayed image.
+
+        Saving is only specified for a view that has an image in it: the
+        compliance suite `~astro_image_display_api.api_test.ImageAPITest`
+        loads an image before calling this method. What happens when
+        nothing has been loaded is left to the implementation, which may
+        raise; document whatever your implementation does.
         """
         raise NotImplementedError
 

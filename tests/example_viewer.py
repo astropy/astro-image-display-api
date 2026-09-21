@@ -106,15 +106,24 @@ class RecordingViewer(ImageViewerLogic):
     # ------------------------------------------------------------------
     def _draw_catalog(self, catalog_label: str) -> None:
         """Record the markers to draw for ``catalog_label``."""
+        # get_catalog() returns a fresh copy of the stored table on every
+        # call, so call it once and reuse the result. A real backend would
+        # place one marker per row of this table.
+        catalog = self.get_catalog(catalog_label=catalog_label)
         self._record(
             "draw_catalog",
             catalog_label=catalog_label,
-            n_rows=len(self.get_catalog(catalog_label=catalog_label)),
+            n_rows=len(catalog),
             style=self.get_catalog_style(catalog_label=catalog_label),
         )
 
     def _remove_catalog_marks(self, catalog_label: str) -> None:
         """Record that the markers for ``catalog_label`` were removed."""
+        # The catalog has already been deleted from the stored state by the
+        # time this runs, so get_catalog(catalog_label=catalog_label) would
+        # raise here. A real backend looks the label up in its own
+        # label-to-markers mapping, built in _draw_catalog, and undraws
+        # those markers.
         self._record("remove_catalog_marks", catalog_label=catalog_label)
 
     # ------------------------------------------------------------------
@@ -132,9 +141,18 @@ class RecordingViewer(ImageViewerLogic):
         # writes a dummy placeholder, which is not useful here. Instead, write
         # out the log of everything that was "displayed".
         p = Path(filename)
+        # There is no rendering hook behind save(), so this guard is not
+        # inherited: every override has to repeat it or call super().save().
         if p.exists() and not overwrite:
             raise FileExistsError(
                 f"File {filename} already exists. Use overwrite=True to overwrite it."
             )
 
-        p.write_text("\n".join(str(call) for call in self.display_calls))
+        # A real backend would dispatch on p.suffix here and render the view
+        # in the matching format (.png, .pdf, ...). This example only has a
+        # call log to write, so it writes text whatever the suffix is. The
+        # explicit encoding keeps the output independent of the platform's
+        # preferred encoding.
+        p.write_text(
+            "\n".join(str(call) for call in self.display_calls), encoding="utf-8"
+        )

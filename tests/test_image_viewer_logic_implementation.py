@@ -91,9 +91,14 @@ def make_recording_viewer():
 
         @contextmanager
         def _batch_update(self):
+            # The finally matters: load_image re-raises loader errors from
+            # inside the batch, and the batch must still be closed. See
+            # test_example_viewer.test_batch_closes_when_load_fails.
             calls.append(("batch_enter", None))
-            yield
-            calls.append(("batch_exit", None))
+            try:
+                yield
+            finally:
+                calls.append(("batch_exit", None))
 
     return RecordingViewer(), calls
 
