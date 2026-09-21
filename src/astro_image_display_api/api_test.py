@@ -1174,12 +1174,16 @@ class ImageAPITest:
         with pytest.raises(ValueError, match="Multiple image labels defined"):
             self.image.get_colormap()
 
-    def test_save(self, tmp_path):
+    def test_save(self, tmp_path, data):
+        # Saving is only meaningful once an image has been loaded.
+        self.image.load_image(data)
         filename = tmp_path / "woot.png"
         self.image.save(filename)
         assert filename.is_file()
 
-    def test_save_overwrite(self, tmp_path):
+    def test_save_overwrite(self, tmp_path, data):
+        # Saving is only meaningful once an image has been loaded.
+        self.image.load_image(data)
         filename = tmp_path / "woot.png"
 
         # First write should be fine
