@@ -805,17 +805,8 @@ class ImageAPITest:
         assert all(coords.separation(retrieved_catalog["coord"]) < 1e-9 * u.deg)
 
     def test_get_catalog_empty_on_fresh_viewer(self):
-        # Regression test for #90: get_catalog on a viewer with no catalog
-        # loaded must return an empty table with the requested column
-        # names rather than raising.
-        self._assert_empty_catalog_table(self.image.get_catalog())
-
-        tab = self.image.get_catalog(
-            x_colname="px", y_colname="py", skycoord_colname="sky"
-        )
-        assert len(tab) == 0
-        assert sorted(tab.colnames) == sorted(["px", "py", "sky"])
-
+        with pytest.raises(ValueError, match="(?i)no catalog"):
+            self.image.get_catalog()
     def test_load_get_catalog_custom_column_names(self, catalog):
         # Regression test for #90: a catalog loaded with non-default column
         # names must be retrievable with those names...
@@ -923,7 +914,8 @@ class ImageAPITest:
         self.image.load_catalog(tab, catalog_label="test2", use_skycoord=False)
 
         self.image.remove_catalog(catalog_label="*")
-        self._assert_empty_catalog_table(self.image.get_catalog())
+        with pytest.raises(ValueError, match="(?i)no catalog"):
+            self.image.get_catalog()
 
     def test_remove_all_catalogs_restores_fresh_state(self, catalog):
         # Regression test for #96: after remove_catalog("*") the viewer must

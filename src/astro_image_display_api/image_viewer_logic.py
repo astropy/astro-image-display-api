@@ -882,12 +882,6 @@ class ImageViewerLogic:
     ) -> Table:
         # Docstring is copied from the interface definition, so it is not
         # duplicated here.
-        if catalog_label is None and not self._catalogs:
-            # Nothing is loaded; return an empty table with the expected
-            # columns rather than raising, so that "is there anything
-            # here?" queries are easy to write.
-            return Table(names=[x_colname, y_colname, skycoord_colname])
-
         catalog_label = self._resolve_catalog_label(catalog_label)
 
         # Return a copy so that modifying the returned table cannot corrupt
